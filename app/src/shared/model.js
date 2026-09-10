@@ -25,7 +25,8 @@
         markCarried: true,
         autoRollover: true,
         showProgress: true,
-        updateToken: ""
+        updateToken: "",
+        repoPath: "~/ToDoBar"
       },
       updateStatus: {
         checking: false,
@@ -181,6 +182,12 @@
       case "setUpdateToken":
         s.settings.updateToken = String(action.token || "").trim();
         return s;
+
+      case "setRepoPath": {
+        const value = String(action.path || "").trim();
+        s.settings.repoPath = value || "~/ToDoBar";
+        return s;
+      }
 
       case "setUpdateStatus":
         s.updateStatus = Object.assign({}, state.updateStatus, action.status || {});

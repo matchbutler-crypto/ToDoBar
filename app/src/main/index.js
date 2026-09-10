@@ -18,6 +18,7 @@ const Store = require("./store.js");
 const Model = require("../shared/model.js");
 const Dates = require("../shared/dates.js");
 const Update = require("./update.js");
+const SelfUpdate = require("./selfUpdate.js");
 
 const IS_MAC = process.platform === "darwin";
 const DEMO = process.argv.includes("--demo");
@@ -35,6 +36,7 @@ let tray = null;
 let popover = null;
 let mainWindow = null;
 let dayTimer = null;
+let installing = false;
 
 /* ------------------------------------------------------------------ Tray */
 
@@ -285,6 +287,30 @@ function registerIpc() {
 
   ipcMain.handle("clipboard:write", (_e, text) => {
     clipboard.writeText(String(text || ""));
+  });
+
+  ipcMain.handle("update:install", async () => {
+    if (installing) return { started: false };
+    installing = true;
+
+    const repoPath = store.get().settings.repoPath || "~/ToDoBar";
+    const send = (payload) => {
+      if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send("update:install:progress", payload);
+    };
+    const onLog = (text) => send({ stage: "log", text: text });
+
+    send({ stage: "start" });
+    try {
+      const built = await SelfUpdate.pullAndBuild(repoPath, onLog);
+      send({ stage: "relaunching" });
+      SelfUpdate.scheduleReplaceAndRelaunch(built);
+      // Kurze Verzögerung, damit die letzte IPC-Nachricht noch ankommt, bevor wir beenden.
+      setTimeout(() => app.quit(), 300);
+    } catch (err) {
+      installing = false;
+      send({ stage: "error", message: err.message });
+    }
+    return { started: true };
   });
 }
 

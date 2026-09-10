@@ -3,9 +3,13 @@
 /** Kurze Prüfungen der Zustandslogik: node scripts/test-model.js */
 
 const assert = require("assert");
+const fs = require("fs");
+const os = require("os");
+const path = require("path");
 const Model = require("../src/shared/model.js");
 const Dates = require("../src/shared/dates.js");
 const Update = require("../src/main/update.js");
+const SelfUpdate = require("../src/main/selfUpdate.js");
 
 const today = Dates.todayKey();
 const yesterday = Dates.addDays(today, -1);
@@ -215,4 +219,96 @@ test("Zustand für Einstellungen enthält Token und Update-Status", () => {
   assert.strictEqual(withStatus.updateStatus.latestVersion, "1.2.0");
 });
 
+test("Pfad mit ~ wird zum Home-Verzeichnis aufgelöst", () => {
+  assert.strictEqual(SelfUpdate.expandHome("~"), os.homedir());
+  assert.strictEqual(SelfUpdate.expandHome("~/ToDoBar"), path.join(os.homedir(), "ToDoBar"));
+  assert.strictEqual(SelfUpdate.expandHome("/absolut/pfad"), "/absolut/pfad");
+});
+
+test("findBuiltApp findet arm64/mac/universal, sonst null", () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "todo-findapp-"));
+  assert.strictEqual(SelfUpdate.findBuiltApp(dir), null, "noch nichts gebaut");
+  fs.mkdirSync(path.join(dir, "dist", "mac", "Todo.app"), { recursive: true });
+  assert.strictEqual(SelfUpdate.findBuiltApp(dir), path.join(dir, "dist", "mac", "Todo.app"));
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
 console.log("\n" + passed + " Prüfungen bestanden.");
+
+/**
+ * pullAndBuild() orchestriert echte git/npm/npx-Aufrufe — ohne die auf einem
+ * Linux-Container nachzubilden, ersetzen Fake-Skripte in einem eigenen PATH
+ * die drei Befehle, damit sich der Ablauf (Reihenfolge, Fehlerweitergabe,
+ * Ergebnis-Pfad) trotzdem echt end-to-end prüfen lässt.
+ */
+async function testSelfUpdateOrchestration() {
+  const fakeBin = fs.mkdtempSync(path.join(os.tmpdir(), "todo-fakebin-"));
+  const repo = fs.mkdtempSync(path.join(os.tmpdir(), "todo-fakerepo-"));
+  fs.mkdirSync(path.join(repo, "app"), { recursive: true });
+
+  const write = (name, body) => {
+    const p = path.join(fakeBin, name);
+    fs.writeFileSync(p, "#!/bin/sh\n" + body + "\n", { mode: 0o755 });
+  };
+  write("git", 'echo "FAKE git $@"');
+  write("npm", 'echo "FAKE npm $@"');
+  write(
+    "npx",
+    'echo "FAKE npx $@"\n' +
+      'if echo "$@" | grep -q electron-builder; then mkdir -p dist/mac-arm64/Todo.app; fi'
+  );
+
+  const opts = { login: false, env: { PATH: fakeBin + ":" + process.env.PATH, SHELL: "/bin/sh" } };
+  let log = "";
+  const built = await SelfUpdate.pullAndBuild(repo, (t) => (log += t), opts);
+
+  await asyncTest("pullAndBuild: ruft git → npm → npx in der richtigen Reihenfolge auf", async () => {
+    const gitAt = log.indexOf("FAKE git pull");
+    const npmAt = log.indexOf("FAKE npm install");
+    const npxAt = log.indexOf("FAKE npx electron-builder");
+    assert.ok(gitAt >= 0 && npmAt > gitAt && npxAt > npmAt, "Reihenfolge stimmt nicht:\n" + log);
+  });
+
+  await asyncTest("pullAndBuild: findet das gebaute Bundle", async () => {
+    assert.strictEqual(built, path.join(repo, "app", "dist", "mac-arm64", "Todo.app"));
+  });
+
+  await asyncTest("pullAndBuild: bricht mit sprechendem Fehler ab, wenn ein Schritt scheitert", async () => {
+    write("npm", "exit 1");
+    let error = null;
+    try {
+      await SelfUpdate.pullAndBuild(repo, () => {}, opts);
+    } catch (err) {
+      error = err;
+    }
+    assert.ok(error, "hätte werfen müssen");
+    assert.ok(error.message.indexOf("npm install") >= 0, error.message);
+  });
+
+  await asyncTest("pullAndBuild: meldet einen fehlenden Projektordner klar", async () => {
+    let error = null;
+    try {
+      await SelfUpdate.pullAndBuild(path.join(repo, "nicht-da"), () => {}, opts);
+    } catch (err) {
+      error = err;
+    }
+    assert.ok(error && error.message.indexOf("nicht gefunden") >= 0, error && error.message);
+  });
+
+  fs.rmSync(fakeBin, { recursive: true, force: true });
+  fs.rmSync(repo, { recursive: true, force: true });
+}
+
+async function asyncTest(name, fn) {
+  await fn();
+  passed += 1;
+  console.log("  ✓ " + name);
+}
+
+console.log("\nSelf-Update-Orchestrierung (Fake-Executables)");
+testSelfUpdateOrchestration()
+  .then(() => console.log("\n" + passed + " Prüfungen insgesamt bestanden."))
+  .catch((err) => {
+    console.error("\nFEHLGESCHLAGEN nach " + passed + " Prüfungen:\n" + (err && err.stack ? err.stack : err));
+    process.exitCode = 1;
+  });

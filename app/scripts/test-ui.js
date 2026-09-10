@@ -51,6 +51,18 @@ app.whenReady().then(async () => {
       }
     });
   });
+  // Fingiert das Ein-Klick-Update: schickt echte Fortschritts-Events, ohne
+  // wirklich git/npm/electron-builder anzustoßen — die Orchestrierung selbst
+  // ist in scripts/test-model.js gegen Fake-Executables geprüft.
+  ipcMain.handle("update:install", async () => {
+    win.webContents.send("update:install:progress", { stage: "start" });
+    await wait(20);
+    win.webContents.send("update:install:progress", { stage: "log", text: "→ git pull\nAlready up to date.\n" });
+    await wait(20);
+    win.webContents.send("update:install:progress", { stage: "relaunching" });
+    return { started: true };
+  });
+
   store.subscribe((state) => wins.forEach((w) => w.webContents.send("state:changed", state)));
 
   const webPreferences = {
@@ -276,10 +288,31 @@ app.whenReady().then(async () => {
       assert.ok((await val(win, "document.getElementById('updateCard').textContent")).indexOf("Update verfügbar") >= 0);
     });
 
-    await check("Einstellungen: Zugriffstoken wird gespeichert", async () => {
-      await typeAndEnter(win, ".update-token input", "ghp_test123");
+    await check("Einstellungen: Zugriffstoken und Projektordner werden gespeichert", async () => {
+      await typeAndEnter(win, ".update-field input[type=password]", "ghp_test123");
       await wait(150);
       assert.strictEqual(store.get().settings.updateToken, "ghp_test123");
+      await typeAndEnter(win, ".update-field input[type=text]", "/tmp/MeinToDoBar");
+      await wait(150);
+      assert.strictEqual(store.get().settings.repoPath, "/tmp/MeinToDoBar");
+    });
+
+    await check("Einstellungen: Update installieren zeigt Live-Log im Hintergrund", async () => {
+      await js(
+        win,
+        "[...document.querySelectorAll('#updateCard button')].find(b => b.textContent === 'Update installieren').click(); return true;"
+      );
+      await wait(30);
+      assert.strictEqual(
+        await val(win, "[...document.querySelectorAll('#updateCard button')].find(b => b.textContent.indexOf('Installiere') === 0)?.disabled"),
+        true,
+        "Knopf sperrt sich sofort, kein Doppelklick möglich"
+      );
+      await wait(100);
+      assert.ok(
+        (await val(win, "document.getElementById('updateCard').textContent")).indexOf("git pull") >= 0,
+        "Log-Ausgabe kommt live an"
+      );
     });
 
     console.log("Speichern");

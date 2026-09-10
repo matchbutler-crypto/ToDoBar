@@ -24,5 +24,11 @@ contextBridge.exposeInMainWorld("todo", {
   resizePopover: (height) => ipcRenderer.send("popover:resize", height),
   openWindow: (tab) => ipcRenderer.send("window:open", tab),
   checkForUpdate: () => ipcRenderer.invoke("update:check"),
-  copyToClipboard: (text) => ipcRenderer.invoke("clipboard:write", text)
+  copyToClipboard: (text) => ipcRenderer.invoke("clipboard:write", text),
+  installUpdate: () => ipcRenderer.invoke("update:install"),
+  onInstallProgress: (fn) => {
+    const handler = (_e, payload) => fn(payload);
+    ipcRenderer.on("update:install:progress", handler);
+    return () => ipcRenderer.removeListener("update:install:progress", handler);
+  }
 });

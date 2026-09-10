@@ -29,7 +29,8 @@
   const ui = {
     tab: "Planung",
     expanded: null,
-    backlog: { cat: null, prio: "Mittel", repeat: "Einmalig" }
+    backlog: { cat: null, prio: "Mittel", repeat: "Einmalig" },
+    install: { active: false, log: "", error: null }
   };
   let state = null;
 
@@ -52,11 +53,15 @@
     ["showProgress", "Tagesfortschritt", "Balken und Zähler über der Tagesliste."]
   ];
 
-  /** Ein-Zeiler fürs Terminal: zieht den neuesten Stand, baut die App neu und startet sie neu. */
+  /**
+   * Ein-Zeiler fürs Terminal, falls der Ein-Klick-Weg mal nicht passt (anderer
+   * Projektordner, Berechtigungsproblem, …). Beendet die App erst, bevor das
+   * Bundle in /Applications ersetzt wird — nicht währenddessen.
+   */
   const UPDATE_COMMAND =
-    "cd ~/ToDoBar && git pull && cd app && npm install && npx electron-builder --mac --dir && " +
-    'APP=$(find dist -maxdepth 2 -name "Todo.app" | head -1) && cp -R "$APP" /Applications/ && ' +
-    "killall Todo 2>/dev/null; sleep 1; open -a Todo";
+    "cd ~/ToDoBar && git pull --ff-only && cd app && npm install && npx electron-builder --mac --dir && " +
+    'APP=$(find dist -maxdepth 2 -name "Todo.app" | head -1) && killall Todo 2>/dev/null; sleep 1; ' +
+    'rm -rf /Applications/Todo.app && cp -R "$APP" /Applications/Todo.app && open -a Todo';
 
   function renderTabs(view) {
     UI.clear(els.tabs);
@@ -210,9 +215,10 @@
     renderUpdateCard();
   }
 
-  /** Prüft nur die Versionsnummer im Repo und zeigt sie an — kein Auto-Install. */
+  /** Versionscheck gegen GitHub, plus Ein-Klick-Installieren mit Live-Log. */
   function renderUpdateCard() {
     const status = state.updateStatus || {};
+    const inst = ui.install;
     UI.clear(els.updateCard);
 
     els.updateCard.appendChild(
@@ -222,9 +228,9 @@
           h("button", {
             class: "cat-remove",
             text: status.checking ? "Prüfe …" : "Nach Updates suchen",
-            disabled: status.checking ? "" : null,
+            disabled: status.checking || inst.active ? "" : null,
             onClick: () => {
-              if (!status.checking) window.todo.checkForUpdate();
+              if (!status.checking && !inst.active) window.todo.checkForUpdate();
             }
           })
         ])
@@ -240,22 +246,58 @@
         ? "Update verfügbar: Version " + status.latestVersion + " (geprüft um " + time + ")"
         : "Du hast die aktuelle Version. (geprüft um " + time + ")";
     }
+    els.updateCard.appendChild(h("div", { class: "row update-status" }, [h("span", { class: "hint", text: statusText })]));
 
-    const statusChildren = [h("span", { class: "hint", text: statusText })];
-    if (status.updateAvailable && !status.checking) {
-      statusChildren.push(
-        h("button", {
-          class: "cat-remove",
-          text: "Befehl kopieren",
-          onClick: () => window.todo.copyToClipboard(UPDATE_COMMAND)
-        })
+    if (status.updateAvailable || inst.active || inst.error) {
+      els.updateCard.appendChild(
+        h("div", { class: "row update-status" }, [
+          h("button", {
+            class: "cat-remove update-install-btn",
+            text: inst.active ? "Installiere …" : "Update installieren",
+            disabled: inst.active ? "" : null,
+            onClick: () => {
+              if (inst.active) return;
+              ui.install = { active: true, log: "", error: null };
+              render();
+              window.todo.installUpdate();
+            }
+          }),
+          h("button", {
+            class: "cat-remove",
+            text: "Befehl manuell kopieren",
+            onClick: () => window.todo.copyToClipboard(UPDATE_COMMAND)
+          })
+        ])
       );
     }
-    els.updateCard.appendChild(h("div", { class: "row update-status" }, statusChildren));
+
+    if (inst.active || inst.log || inst.error) {
+      const lines = [];
+      if (inst.error) lines.push(h("span", { class: "install-log-error", text: "Fehlgeschlagen: " + inst.error }));
+      lines.push(h("pre", { class: "install-log", text: inst.log || "Startet …" }));
+      els.updateCard.appendChild(h("div", { class: "row update-log-row" }, lines));
+    }
+
+    const pathInput = h("input", {
+      type: "text",
+      placeholder: "~/ToDoBar",
+      value: state.settings.repoPath || "~/ToDoBar",
+      onKeydown: (e) => {
+        if (e.key !== "Enter") return;
+        dispatch({ type: "setRepoPath", path: e.target.value });
+        e.target.blur();
+      }
+    });
+    els.updateCard.appendChild(
+      h("div", { class: "row update-field" }, [
+        h("span", { class: "hint", text: "Projektordner (für den Ein-Klick-Update)" }),
+        pathInput
+      ])
+    );
 
     const tokenInput = h("input", {
       type: "password",
-      placeholder: "GitHub-Zugriffstoken (nur bei privatem Repo nötig)",
+      placeholder: "GitHub-Zugriffstoken (nur bei privatem Repo für den Versionscheck nötig)",
       value: state.settings.updateToken || "",
       onKeydown: (e) => {
         if (e.key !== "Enter") return;
@@ -264,11 +306,11 @@
       }
     });
     els.updateCard.appendChild(
-      h("div", { class: "row update-token" }, [
+      h("div", { class: "row update-field" }, [
         tokenInput,
         h("span", {
           class: "hint",
-          text: "Bleibt nur lokal auf diesem Mac, in derselben Datei wie deine Aufgaben. Enter zum Speichern."
+          text: "Beide Felder bleiben nur lokal auf diesem Mac, in derselben Datei wie deine Aufgaben. Enter zum Speichern."
         })
       ])
     );
@@ -326,6 +368,15 @@
   });
   window.todo.onTab((tab) => {
     if (Model.TABS.indexOf(tab) >= 0) setTab(tab);
+  });
+  window.todo.onInstallProgress((payload) => {
+    if (payload.stage === "log") ui.install.log = (ui.install.log + payload.text).slice(-6000);
+    else if (payload.stage === "relaunching") ui.install.log += "\n→ Ersetze App und starte neu …\n";
+    else if (payload.stage === "error") {
+      ui.install.active = false;
+      ui.install.error = payload.message;
+    }
+    if (ui.tab === "Einstellungen") render();
   });
 
   window.todo.getState().then((next) => {
