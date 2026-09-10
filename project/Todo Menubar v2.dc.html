@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+@font-face { font-family: "CesaHelvetica"; src: url("fonts/Helvetica.ttf") format("truetype"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "CesaHelvetica"; src: url("fonts/Helvetica-Bold.ttf") format("truetype"); font-weight: 700; font-display: swap; }
+html, body { margin: 0; padding: 0; background: #EAE4D9; }
+body { font-family: "CesaHelvetica", Helvetica, Arial, sans-serif; color: #1A1816; -webkit-font-smoothing: antialiased; }
+a { color: #1A1816; text-decoration: none; }
+a:hover { text-decoration: underline; text-underline-offset: 4px; }
+input, button { font-family: inherit; color: inherit; }
+input:focus, button:focus { outline: none; }
+::placeholder { color: #B8B2A7; }
+</style>
+</helmet>
+
+<div style="display:flex; flex-direction:column; gap:64px; padding:56px 32px 96px; max-width:1240px; margin:0 auto">
+
+  <div style="display:flex; flex-direction:column; gap:8px">
+    <div style="font-size:10px; text-transform:uppercase; letter-spacing:0.22em; color:#8A8378">Todo · macOS Menübar</div>
+    <div style="font-size:15px; line-height:1.6; max-width:54ch">Schnell hinzufügen aus der Menübar, Tagesliste im Popover, Wochen-Backlog und Einstellungen im Fenster. Offene Aufgaben wandern automatisch auf den nächsten Tag und bleiben markiert.</div>
+  </div>
+
+  <!-- ============ 01 POPOVER ============ -->
+  <div style="display:flex; flex-direction:column; gap:20px">
+    <div style="font-size:10px; text-transform:uppercase; letter-spacing:0.22em; color:#8A8378">01 — Popover</div>
+
+    <div style="background:#1A1816; display:flex; flex-direction:column">
+      <div style="height:28px; display:flex; align-items:center; justify-content:space-between; padding:0 14px; background:#141210; border-bottom:1px solid #2E2B27">
+        <div style="display:flex; align-items:center; gap:20px; font-size:12px; color:#F4EFE6">
+          <span style="font-weight:700">Todo</span>
+          <span style="color:#B8B2A7">Datei</span>
+          <span style="color:#B8B2A7">Bearbeiten</span>
+          <span style="color:#B8B2A7">Ansicht</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:18px; font-size:12px; color:#F4EFE6">
+          <span style="display:flex; align-items:center; gap:7px; padding:2px 8px; background:#2E2B27">
+            <span style="width:6px; height:6px; background:#F4EFE6; display:block"></span>
+            <span style="font-variant-numeric:tabular-nums">{{ openCount }}</span>
+          </span>
+          <span style="color:#B8B2A7">WLAN</span>
+          <span style="color:#B8B2A7; font-variant-numeric:tabular-nums">Do 10. Sep  9:41</span>
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; padding:10px 18px 96px">
+        <div style="position:relative; width:392px; background:#F4EFE6; border:1px solid #B8B2A7; box-shadow:0 18px 48px rgba(20,18,16,0.35); display:flex; flex-direction:column">
+          <div style="width:14px; height:14px; background:#F4EFE6; border-left:1px solid #B8B2A7; border-top:1px solid #B8B2A7; transform:rotate(45deg); position:absolute; top:-8px; right:26px"></div>
+
+          <div style="padding:14px 16px 12px; border-bottom:1px solid #DDD7CC; display:flex; flex-direction:column; gap:12px">
+            <input value="{{ draft }}" onChange="{{ onDraft }}" onKeyDown="{{ onDraftKey }}" placeholder="Aufgabe hinzufügen" style="border:none; border-bottom:1px solid #DDD7CC; background:transparent; padding:4px 0 8px; font-size:15px; width:100%" />
+            <div style="display:flex; flex-wrap:wrap; gap:6px">
+              <sc-for list="{{ categories }}" as="cat" hint-placeholder-count="4">
+                <button onClick="{{ cat.pick }}" style="{{ cat.chipStyle }}">{{ cat.name }}</button>
+              </sc-for>
+            </div>
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap">
+              <div style="display:flex; gap:6px">
+                <sc-for list="{{ prios }}" as="p" hint-placeholder-count="3">
+                  <button onClick="{{ p.pick }}" style="{{ p.chipStyle }}">{{ p.name }}</button>
+                </sc-for>
+              </div>
+              <div style="display:flex; gap:6px">
+                <sc-for list="{{ buckets }}" as="b" hint-placeholder-count="2">
+                  <button onClick="{{ b.pick }}" style="{{ b.chipStyle }}">{{ b.name }}</button>
+                </sc-for>
+              </div>
+            </div>
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:12px">
+              <div style="display:flex; gap:6px">
+                <sc-for list="{{ repeats }}" as="r" hint-placeholder-count="3">
+                  <button onClick="{{ r.pick }}" style="{{ r.chipStyle }}">{{ r.name }}</button>
+                </sc-for>
+              </div>
+              <button onClick="{{ addTask }}" style="border:1px solid #1A1816; background:#1A1816; color:#F4EFE6; font-size:11px; text-transform:uppercase; letter-spacing:0.12em; padding:7px 14px; cursor:pointer" style-hover="background:#2E2B27; border-color:#2E2B27">Hinzufügen</button>
+            </div>
+          </div>
+
+          <div style="padding:14px 16px 8px; display:flex; flex-direction:column; gap:8px">
+            <div style="display:flex; align-items:baseline; justify-content:space-between">
+              <span style="font-size:10px; text-transform:uppercase; letter-spacing:0.22em">Heute · Do 10. Sep</span>
+              <span style="font-size:10px; letter-spacing:0.12em; color:#8A8378; font-variant-numeric:tabular-nums">{{ todayProgress }}</span>
+            </div>
+            <sc-if value="{{ showProgress }}" hint-placeholder-val="{{ true }}">
+              <div style="height:2px; background:#DDD7CC; width:100%"><div style="{{ progressBarStyle }}"></div></div>
+            </sc-if>
+          </div>
+
+          <div style="display:flex; flex-direction:column; max-height:352px; overflow:auto">
+            <sc-for list="{{ todayTasks }}" as="t" hint-placeholder-count="5">
+              <div style="border-bottom:1px solid #E7E1D6; padding:9px 16px 10px">
+                <div style="display:flex; gap:11px; align-items:flex-start">
+                  <button onClick="{{ t.toggle }}" style="{{ t.boxStyle }}"></button>
+                  <div style="display:flex; flex-direction:column; gap:3px; flex:1; min-width:0">
+                    <span onClick="{{ t.expand }}" style="{{ t.textStyle }}">{{ t.text }}</span>
+                    <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; font-size:10px; text-transform:uppercase; letter-spacing:0.18em; color:#8A8378">
+                      <span>{{ t.cat }}</span>
+                      <span>{{ t.prio }}</span>
+                      <sc-if value="{{ t.repeat }}" hint-placeholder-val="{{ false }}"><span>{{ t.repeatLabel }}</span></sc-if>
+                      <sc-if value="{{ t.hasSubs }}" hint-placeholder-val="{{ false }}"><span>{{ t.subLabel }}</span></sc-if>
+                      <sc-if value="{{ t.carried }}" hint-placeholder-val="{{ false }}"><span style="color:#5C2A2A">{{ t.carriedLabel }}</span></sc-if>
+                    </div>
+                  </div>
+                  <sc-if value="{{ t.isHigh }}" hint-placeholder-val="{{ false }}">
+                    <span style="width:6px; height:6px; background:#1A1816; display:block; margin-top:6px; flex:none"></span>
+                  </sc-if>
+                </div>
+                <sc-if value="{{ t.expanded }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex; flex-direction:column; gap:7px; padding:10px 0 2px 25px">
+                    <sc-if value="{{ t.note }}" hint-placeholder-val="{{ false }}">
+                      <span style="font-size:12px; line-height:1.5; color:#5F5A52; text-wrap:pretty">{{ t.note }}</span>
+                    </sc-if>
+                    <sc-for list="{{ t.subs }}" as="s" hint-placeholder-count="2">
+                      <div style="display:flex; gap:9px; align-items:flex-start">
+                        <button onClick="{{ s.toggle }}" style="{{ s.boxStyle }}"></button>
+                        <span style="{{ s.textStyle }}">{{ s.text }}</span>
+                      </div>
+                    </sc-for>
+                  </div>
+                </sc-if>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="padding:10px 16px; border-top:1px solid #DDD7CC; display:flex; justify-content:space-between; align-items:center; font-size:10px; text-transform:uppercase; letter-spacing:0.18em; color:#8A8378">
+            <span>{{ openCount }} offen</span>
+            <span style="display:flex; gap:14px">
+              <span>⌥ Leertaste</span>
+              <span>Fenster öffnen</span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 02 FENSTER ============ -->
+  <div style="display:flex; flex-direction:column; gap:20px">
+    <div style="font-size:10px; text-transform:uppercase; letter-spacing:0.22em; color:#8A8378">02 — Fenster</div>
+
+    <div style="border:1px solid #B8B2A7; background:#F4EFE6; display:flex; flex-direction:column; min-height:560px">
+      <div style="height:44px; display:flex; align-items:center; gap:24px; padding:0 14px; border-bottom:1px solid #DDD7CC; background:#EFEAE0; flex-wrap:wrap">
+        <div style="display:flex; gap:8px">
+          <span style="width:11px; height:11px; border:1px solid #B8B2A7; display:block"></span>
+          <span style="width:11px; height:11px; border:1px solid #B8B2A7; display:block"></span>
+          <span style="width:11px; height:11px; border:1px solid #B8B2A7; display:block"></span>
+        </div>
+        <div style="display:flex; gap:2px">
+          <sc-for list="{{ tabs }}" as="tab" hint-placeholder-count="4">
+            <button onClick="{{ tab.pick }}" style="{{ tab.style }}">{{ tab.name }}</button>
+          </sc-for>
+        </div>
+      </div>
+
+      <!-- HEUTE + BACKLOG -->
+      <sc-if value="{{ isPlan }}" hint-placeholder-val="{{ true }}">
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); flex:1">
+          <div style="border-right:1px solid #E7E1D6; display:flex; flex-direction:column">
+            <div style="padding:22px 22px 14px; display:flex; flex-direction:column; gap:10px">
+              <div style="display:flex; align-items:baseline; justify-content:space-between; gap:12px">
+                <span style="font-size:19px">Heute</span>
+                <span style="font-size:10px; text-transform:uppercase; letter-spacing:0.18em; color:#8A8378; font-variant-numeric:tabular-nums">Do 10. Sep · {{ todayProgress }}</span>
+              </div>
+              <sc-if value="{{ showProgress }}" hint-placeholder-val="{{ true }}">
+                <div style="height:2px; background:#DDD7CC; width:100%"><div style="{{ progressBarStyle }}"></div></div>
+              </sc-if>
+            </div>
+            <sc-for list="{{ todayTasks }}" as="t" hint-placeholder-count="5">
+              <div style="border-top:1px solid #E7E1D6; padding:13px 22px">
+                <div style="display:flex; gap:12px; align-items:flex-start">
+                  <button onClick="{{ t.toggle }}" style="{{ t.boxStyle }}"></button>
+                  <div style="display:flex; flex-direction:column; gap:4px; flex:1; min-width:0">
+                    <span onClick="{{ t.expand }}" style="{{ t.textStyleLg }}">{{ t.text }}</span>
+                    <div style="display:flex; gap:12px; flex-wrap:wrap; font-size:10px; text-transform:uppercase; letter-spacing:0.18em; color:#8A8378">
+                      <span>{{ t.cat }}</span>
+                      <span>{{ t.prio }}</span>
+                      <sc-if value="{{ t.repeat }}" hint-placeholder-val="{{ false }}"><span>{{ t.repeatLabel }}</span></sc-if>
+                      <sc-if value="{{ t.hasSubs }}" hint-placeholder-val="{{ false }}"><span>{{ t.subLabel }}</span></sc-if>
+                      <sc-if value="{{ t.carried }}" hint-placeholder-val="{{ false }}"><span style="color:#5C2A2A">{{ t.carriedLabel }}</span></sc-if>
+                    </div>
+                    <sc-if value="{{ t.expanded }}" hint-placeholder-val="{{ false }}">
+                      <div style="display:flex; flex-direction:column; gap:8px; padding:8px 0 2px">
+                        <sc-if value="{{ t.note }}" hint-placeholder-val="{{ false }}">
+                          <span style="font-size:13px; line-height:1.55; color:#5F5A52; text-wrap:pretty">{{ t.note }}</span>
+                        </sc-if>
+                        <sc-for list="{{ t.subs }}" as="s" hint-placeholder-count="2">
+                          <div style="display:flex; gap:10px; align-items:flex-start">
+                            <button onClick="{{ s.toggle }}" style="{{ s.boxStyle }}"></button>
+                            <span style="{{ s.textStyle }}">{{ s.text }}</span>
+                          </div>
+                        </sc-for>
+                      </div>
+                    </sc-if>
+                  </div>
+                  <sc-if value="{{ t.isHigh }}" hint-placeholder-val="{{ false }}">
+                    <span style="width:6px; height:6px; background:#1A1816; display:block; margin-top:7px; flex:none"></span>
+                  </sc-if>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="display:flex; flex-direction:column; background:#EFEAE0">
+            <div style="padding:22px 22px 14px; display:flex; align-items:baseline; justify-content:space-between; gap:12px">
+              <span style="font-size:19px">Diese Woche</span>
+              <span style="font-size:10px; text-transform:uppercase; letter-spacing:0.18em; color:#8A8378; font-variant-numeric:tabular-nums">{{ backlogCount }} Aufgaben</span>
+            </div>
+            <sc-for list="{{ backlog }}" as="t" hint-placeholder-count="4">
+              <div style="border-top:1px solid #E2DCD1; padding:13px 22px; display:flex; gap:12px; align-items:flex-start">
+                <button onClick="{{ t.toggle }}" style="{{ t.boxStyle }}"></button>
+                <div style="display:flex; flex-direction:column; gap:4px; flex:1; min-width:0">
+                  <span style="{{ t.textStyleLg }}">{{ t.text }}</span>
+                  <div style="display:flex; gap:12px; flex-wrap:wrap; font-size:10px; text-transform:uppercase; letter-spacing:0.18em; color:#8A8378">
+                    <span>{{ t.cat }}</span>
+                    <span>{{ t.prio }}</span>
+                    <sc-if value="{{ t.repeat }}" hint-placeholder-val="{{ false }}"><span>{{ t.repeatLabel }}</span></sc-if>
+                  </div>
+                </div>
+                <button onClick="{{ t.toToday }}" style="border:1px solid #DDD7CC; background:transparent; font-size:10px; text-transform:uppercase; letter-spacing:0.14em; padding:6px 10px; cursor:pointer; flex:none" style-hover="border-color:#1A1816">Heute</button>
+              </div>
+            </sc-for>
+            <div style="border-top:1px solid #E2DCD1; padding:14px 22px 22px">
+              <input value="{{ backlogDraft }}" onChange="{{ onBacklogDraft }}" onKeyDown="{{ onBacklogKey }}" placeholder="Zur Woche hinzufügen" style="width:100%; border:none; border-bottom:1px solid #DDD7CC; background:transparent; font-size:14px; padding:4px 0 8px" />
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ARCHIV -->
+      <sc-if value="{{ isArchive }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:1; display:flex; flex-direction:column">
+          <div style="padding:22px 22px 14px; display:flex; align-items:baseline; justify-content:space-between; gap:12px">
+            <span style="font-size:19px">Archiv</span>
+            <span style="font-size:10px; text-transform:uppercase; letter-spacing:0.18em; color:#8A8378">Erledigt · letzte 7 Tage</span>
+          </div>
+          <sc-for list="{{ archiveGroups }}" as="g" hint-placeholder-count="3">
+            <div style="border-top:1px solid #E7E1D6; padding:16px 22px; display:flex; gap:28px; flex-wrap:wrap">
+              <span style="font-size:10px; text-transform:uppercase; letter-spacing:0.22em; color:#8A8378; width:120px; flex:none; padding-top:2px">{{ g.label }}</span>
+              <div style="display:flex; flex-direction:column; gap:8px; flex:1; min-width:0">
+                <sc-for list="{{ g.tasks }}" as="t" hint-placeholder-count="2">
+                  <div style="display:flex; gap:12px; align-items:baseline; flex-wrap:wrap">
+                    <span style="font-size:14px; color:#8A8378; text-decoration:line-through; text-decoration-thickness:1px">{{ t.text }}</span>
+                    <span style="font-size:10px; text-transform:uppercase; letter-spacing:0.18em; color:#B8B2A7">{{ t.cat }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <!-- EINSTELLUNGEN -->
+      <sc-if value="{{ isSettings }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:1; display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr))">
+          <div style="border-right:1px solid #E7E1D6; padding:22px; display:flex; flex-direction:column; gap:18px">
+            <div style="display:flex; flex-direction:column; gap:6px">
+              <span style="font-size:19px">Kategorien</span>
+              <span style="font-size:13px; line-height:1.55; color:#5F5A52">Eigene Kategorien anlegen und entfernen. Aufgaben behalten ihre Kategorie, auch wenn sie hier gelöscht wird.</span>
+            </div>
+            <div style="display:flex; flex-direction:column">
+              <sc-for list="{{ categories }}" as="cat" hint-placeholder-count="4">
+                <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding:11px 0; border-bottom:1px solid #E7E1D6">
+                  <span style="font-size:14px">{{ cat.name }}</span>
+                  <div style="display:flex; align-items:center; gap:14px">
+                    <span style="font-size:10px; text-transform:uppercase; letter-spacing:0.18em; color:#B8B2A7; font-variant-numeric:tabular-nums">{{ cat.count }}</span>
+                    <button onClick="{{ cat.remove }}" style="border:none; background:transparent; font-size:10px; text-transform:uppercase; letter-spacing:0.14em; color:#8A8378; cursor:pointer; padding:0" style-hover="color:#5C2A2A">Entfernen</button>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+            <input value="{{ catDraft }}" onChange="{{ onCatDraft }}" onKeyDown="{{ onCatKey }}" placeholder="Neue Kategorie · Enter" style="border:none; border-bottom:1px solid #DDD7CC; background:transparent; font-size:14px; padding:4px 0 8px; max-width:320px" />
+          </div>
+
+          <div style="padding:22px; display:flex; flex-direction:column; gap:18px">
+            <span style="font-size:19px">Verhalten</span>
+            <div style="display:flex; flex-direction:column">
+              <sc-for list="{{ switches }}" as="sw" hint-placeholder-count="3">
+                <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:20px; padding:14px 0; border-bottom:1px solid #E7E1D6">
+                  <div style="display:flex; flex-direction:column; gap:4px; min-width:0">
+                    <span style="font-size:14px">{{ sw.name }}</span>
+                    <span style="font-size:12px; line-height:1.5; color:#8A8378; text-wrap:pretty">{{ sw.hint }}</span>
+                  </div>
+                  <button onClick="{{ sw.toggle }}" style="{{ sw.style }}">{{ sw.state }}</button>
+                </div>
+              </sc-for>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:6px; padding-top:4px">
+              <span style="font-size:10px; text-transform:uppercase; letter-spacing:0.22em; color:#8A8378">Kurzbefehl</span>
+              <span style="font-size:14px">⌥ Leertaste öffnet das Popover</span>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <div style="display:flex; flex-wrap:wrap; gap:28px; padding:16px 14px; border-top:1px solid #DDD7CC; font-size:10px; text-transform:uppercase; letter-spacing:0.18em; color:#8A8378">
+        <span style="display:flex; align-items:center; gap:8px"><span style="width:6px; height:6px; background:#1A1816; display:block"></span>Hohe Priorität</span>
+        <span style="display:flex; align-items:center; gap:8px"><span style="color:#5C2A2A">+n Tage</span>Übertragen</span>
+        <span>{{ carriedCount }} übertragene Aufgaben</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;prioritySystem&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;drei Stufen&quot;,&quot;flag&quot;],&quot;default&quot;:&quot;drei Stufen&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Verhalten&quot;}}">
+const PRIOS = ["Hoch", "Mittel", "Niedrig"];
+const RANK = { Hoch: 0, Mittel: 1, Niedrig: 2 };
+const REPEATS = ["Einmalig", "Täglich", "Wöchentlich"];
+const TABS = ["Planung", "Archiv", "Einstellungen"];
+
+const CHIP = "font-size:10px; text-transform:uppercase; letter-spacing:0.14em; padding:5px 9px; cursor:pointer; background:transparent;";
+const chip = (on) => CHIP + (on ? "border:1px solid #1A1816; color:#1A1816;" : "border:1px solid #DDD7CC; color:#8A8378;");
+const box = (done, sm) => "width:" + (sm ? 11 : 14) + "px; height:" + (sm ? 11 : 14) + "px; flex:none; margin-top:" + (sm ? 3 : 2) + "px; cursor:pointer; padding:0; border:1px solid " +
+  (done ? "#1A1816; background:#1A1816;" : "#B8B2A7; background:transparent;");
+const txt = (done, size) => "font-size:" + size + "px; line-height:1.4; text-wrap:pretty; cursor:default; " +
+  (done ? "color:#B8B2A7; text-decoration:line-through; text-decoration-thickness:1px;" : "color:#1A1816;");
+
+class Component extends DCLogic {
+  state = {
+    draft: "", backlogDraft: "", catDraft: "",
+    cat: "CESA", prio: "Mittel", repeat: "Einmalig", bucket: "Heute",
+    tab: "Planung", expanded: null, nextId: 100,
+    markCarried: true, showProgress: true, autoRollover: true,
+    cats: ["CESA", "Admin", "Privat", "Deep Work"],
+    tasks: [
+      { id: 1, text: "AW26 Lookbook — Bildauswahl finalisieren", cat: "CESA", prio: "Hoch", bucket: "Heute", done: false, carried: 2, repeat: "Einmalig",
+        note: "Auswahl mit Studio abgestimmt, 34 Frames im Ordner. Entscheidung heute, Layout wartet.",
+        subs: [{ text: "Zweitauswahl markieren", done: true }, { text: "Retusche-Briefing schreiben", done: false }] },
+      { id: 2, text: "Porto: Stoffmuster 380 gsm nachfassen", cat: "CESA", prio: "Hoch", bucket: "Heute", done: false, carried: 0, repeat: "Einmalig", note: "", subs: [] },
+      { id: 3, text: "Rechnungen August ablegen", cat: "Admin", prio: "Niedrig", bucket: "Heute", done: true, carried: 0, repeat: "Wöchentlich", note: "", subs: [], doneDay: "Do 10. Sep" },
+      { id: 4, text: "Produkttexte Hoodie schreiben", cat: "Deep Work", prio: "Mittel", bucket: "Heute", done: false, carried: 1, repeat: "Einmalig",
+        note: "Material, Herkunft, Passform. Keine Adjektive ohne Zahl.", subs: [{ text: "Rohfassung", done: false }, { text: "Gegenlesen lassen", done: false }] },
+      { id: 5, text: "Zahnarzt anrufen", cat: "Privat", prio: "Mittel", bucket: "Heute", done: false, carried: 0, repeat: "Einmalig", note: "", subs: [] },
+      { id: 6, text: "Hangtag-Druck freigeben", cat: "CESA", prio: "Hoch", bucket: "Woche", done: false, carried: 0, repeat: "Einmalig", note: "", subs: [] },
+      { id: 7, text: "Saisonplanung SS27 skizzieren", cat: "Deep Work", prio: "Mittel", bucket: "Woche", done: false, carried: 0, repeat: "Einmalig", note: "", subs: [] },
+      { id: 8, text: "Newsletter #15 vorbereiten", cat: "CESA", prio: "Mittel", bucket: "Woche", done: false, carried: 0, repeat: "Wöchentlich", note: "", subs: [] },
+      { id: 9, text: "Lager sortieren", cat: "Admin", prio: "Niedrig", bucket: "Woche", done: false, carried: 0, repeat: "Einmalig", note: "", subs: [] },
+      { id: 10, text: "Casting-Shortlist durchgehen", cat: "CESA", prio: "Mittel", bucket: "Heute", done: true, carried: 0, repeat: "Einmalig", note: "", subs: [], doneDay: "Mi 09. Sep" },
+      { id: 11, text: "Steuerberater Unterlagen", cat: "Admin", prio: "Hoch", bucket: "Heute", done: true, carried: 0, repeat: "Einmalig", note: "", subs: [], doneDay: "Di 08. Sep" },
+      { id: 12, text: "Newsletter #14 gegenlesen", cat: "CESA", prio: "Mittel", bucket: "Heute", done: true, carried: 0, repeat: "Einmalig", note: "", subs: [], doneDay: "Mo 07. Sep" }
+    ]
+  };
+
+  add(bucket, key) {
+    const text = (key === "backlogDraft" ? this.state.backlogDraft : this.state.draft).trim();
+    if (!text) return;
+    this.setState((s) => {
+      const patch = {
+        nextId: s.nextId + 1,
+        tasks: s.tasks.concat([{ id: s.nextId, text, cat: s.cat, prio: s.prio, bucket, done: false, carried: 0, repeat: s.repeat, note: "", subs: [] }])
+      };
+      patch[key] = "";
+      return patch;
+    });
+  }
+
+  toggle(id) {
+    this.setState((s) => ({ tasks: s.tasks.map((t) => t.id === id
+      ? Object.assign({}, t, { done: !t.done, doneDay: !t.done ? "Do 10. Sep" : undefined }) : t) }));
+  }
+
+  toggleSub(id, i) {
+    this.setState((s) => ({ tasks: s.tasks.map((t) => t.id === id
+      ? Object.assign({}, t, { subs: t.subs.map((v, j) => j === i ? { text: v.text, done: !v.done } : v) }) : t) }));
+  }
+
+  wrap(t) {
+    const flagOnly = (this.props.prioritySystem ?? "drei Stufen") === "flag";
+    const doneSubs = t.subs.filter((s) => s.done).length;
+    return {
+      text: t.text, cat: t.cat,
+      prio: flagOnly ? (t.prio === "Hoch" ? "Wichtig" : "") : t.prio,
+      repeat: t.repeat !== "Einmalig", repeatLabel: t.repeat,
+      hasSubs: t.subs.length > 0, subLabel: doneSubs + " / " + t.subs.length,
+      carried: this.state.markCarried && t.carried > 0,
+      carriedLabel: "+" + t.carried + (t.carried === 1 ? " Tag" : " Tage"),
+      isHigh: t.prio === "Hoch" && !t.done,
+      boxStyle: box(t.done), textStyle: txt(t.done, 14), textStyleLg: txt(t.done, 15),
+      expanded: this.state.expanded === t.id && (t.note || t.subs.length > 0),
+      note: t.note,
+      subs: t.subs.map((s, i) => ({ text: s.text, boxStyle: box(s.done, true), textStyle: txt(s.done, 13), toggle: () => this.toggleSub(t.id, i) })),
+      toggle: () => this.toggle(t.id),
+      expand: () => this.setState((s) => ({ expanded: s.expanded === t.id ? null : t.id })),
+      toToday: () => this.setState((s) => ({ tasks: s.tasks.map((x) => x.id === t.id ? Object.assign({}, x, { bucket: "Heute" }) : x) }))
+    };
+  }
+
+  renderVals() {
+    const s = this.state;
+    const flagOnly = (this.props.prioritySystem ?? "drei Stufen") === "flag";
+    const sorted = (l) => l.slice().sort((a, b) => (a.done - b.done) || (RANK[a.prio] - RANK[b.prio]) || (b.carried - a.carried));
+    const today = sorted(s.tasks.filter((t) => t.bucket === "Heute" && (!t.done || t.doneDay === "Do 10. Sep")));
+    const doneToday = today.filter((t) => t.done).length;
+    const backlog = sorted(s.tasks.filter((t) => t.bucket === "Woche" && !t.done));
+    const archived = s.tasks.filter((t) => t.done && t.doneDay);
+    const days = [];
+    archived.forEach((t) => { if (days.indexOf(t.doneDay) < 0) days.push(t.doneDay); });
+
+    const sw = (name, hint, key) => ({
+      name, hint, state: s[key] ? "An" : "Aus",
+      style: "font-size:10px; text-transform:uppercase; letter-spacing:0.14em; padding:6px 12px; cursor:pointer; flex:none; background:" +
+        (s[key] ? "#1A1816; color:#F4EFE6; border:1px solid #1A1816;" : "transparent; color:#8A8378; border:1px solid #DDD7CC;"),
+      toggle: () => this.setState((p) => { const o = {}; o[key] = !p[key]; return o; })
+    });
+
+    return {
+      draft: s.draft, backlogDraft: s.backlogDraft, catDraft: s.catDraft,
+      onDraft: (e) => this.setState({ draft: e.target.value }),
+      onDraftKey: (e) => { if (e.key === "Enter") this.add(s.bucket === "Heute" ? "Heute" : "Woche", "draft"); },
+      addTask: () => this.add(s.bucket === "Heute" ? "Heute" : "Woche", "draft"),
+      onBacklogDraft: (e) => this.setState({ backlogDraft: e.target.value }),
+      onBacklogKey: (e) => { if (e.key === "Enter") this.add("Woche", "backlogDraft"); },
+      onCatDraft: (e) => this.setState({ catDraft: e.target.value }),
+      onCatKey: (e) => {
+        if (e.key !== "Enter") return;
+        const v = s.catDraft.trim();
+        if (!v || s.cats.indexOf(v) >= 0) return;
+        this.setState((p) => ({ cats: p.cats.concat([v]), catDraft: "" }));
+      },
+      categories: s.cats.map((name) => ({
+        name, chipStyle: chip(s.cat === name),
+        count: s.tasks.filter((t) => t.cat === name && !t.done).length,
+        pick: () => this.setState({ cat: name }),
+        remove: () => this.setState((p) => ({ cats: p.cats.filter((c) => c !== name), cat: p.cat === name ? (p.cats.filter((c) => c !== name)[0] || "") : p.cat }))
+      })),
+      prios: (flagOnly ? ["Wichtig"] : PRIOS).map((name) => ({
+        name, chipStyle: chip(s.prio === name || (name === "Wichtig" && s.prio === "Hoch")),
+        pick: () => this.setState({ prio: name === "Wichtig" ? "Hoch" : name })
+      })),
+      repeats: REPEATS.map((name) => ({ name, chipStyle: chip(s.repeat === name), pick: () => this.setState({ repeat: name }) })),
+      buckets: ["Heute", "Woche"].map((name) => ({ name, chipStyle: chip(s.bucket === name), pick: () => this.setState({ bucket: name }) })),
+      todayTasks: today.map((t) => this.wrap(t)),
+      backlog: backlog.map((t) => this.wrap(t)),
+      backlogCount: backlog.length,
+      todayProgress: doneToday + " / " + today.length,
+      showProgress: s.showProgress,
+      progressBarStyle: "height:2px; background:#1A1816; width:" + (today.length ? Math.round((doneToday / today.length) * 100) : 0) + "%",
+      openCount: s.tasks.filter((t) => !t.done && t.bucket === "Heute").length,
+      carriedCount: s.tasks.filter((t) => t.carried > 0 && !t.done).length,
+      tabs: TABS.map((name) => ({
+        name, pick: () => this.setState({ tab: name }),
+        style: "font-size:10px; text-transform:uppercase; letter-spacing:0.18em; padding:7px 12px; cursor:pointer; border:1px solid " +
+          (s.tab === name ? "#1A1816; background:#1A1816; color:#F4EFE6;" : "transparent; background:transparent; color:#8A8378;")
+      })),
+      isPlan: s.tab === "Planung", isArchive: s.tab === "Archiv", isSettings: s.tab === "Einstellungen",
+      archiveGroups: days.map((label) => ({ label, tasks: archived.filter((t) => t.doneDay === label).map((t) => ({ text: t.text, cat: t.cat })) })),
+      switches: [
+        sw("Übertrag markieren", "Offene Aufgaben zeigen, wie viele Tage sie schon mitlaufen.", "markCarried"),
+        sw("Automatisch übertragen", "Nicht erledigte Aufgaben wandern nachts auf den nächsten Tag.", "autoRollover"),
+        sw("Tagesfortschritt", "Balken und Zähler über der Tagesliste.", "showProgress")
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

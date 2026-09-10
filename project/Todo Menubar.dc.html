@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+@font-face { font-family: "CesaHelvetica"; src: url("fonts/Helvetica.ttf") format("truetype"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "CesaHelvetica"; src: url("fonts/Helvetica-Bold.ttf") format("truetype"); font-weight: 700; font-display: swap; }
+html, body { margin: 0; padding: 0; background: #EAE4D9; }
+body { font-family: "CesaHelvetica", Helvetica, Arial, sans-serif; color: #1A1816; -webkit-font-smoothing: antialiased; }
+a { color: #1A1816; text-decoration: none; }
+a:hover { text-decoration: underline; text-underline-offset: 4px; }
+input, button, select { font-family: inherit; color: inherit; }
+input:focus, button:focus { outline: none; }
+::placeholder { color: #B8B2A7; }
+</style>
+</helmet>
+
+<div style="display:flex; flex-direction:column; gap:64px; padding:56px 32px 96px; max-width:1400px; margin:0 auto">
+
+  <div style="display:flex; flex-direction:column; gap:8px">
+    <div style="font-size:10px; font-weight:400; text-transform:uppercase; letter-spacing:0.22em; color:#8A8378">todo · macos menübar</div>
+    <div style="font-size:15px; line-height:1.6; max-width:52ch; color:#1A1816">schnell hinzufügen aus der menübar, tagesliste im popover, woche im fenster. offene aufgaben wandern auf den nächsten tag.</div>
+  </div>
+
+  <!-- ============ MENÜBAR + POPOVER ============ -->
+  <div style="display:flex; flex-direction:column; gap:20px">
+    <div style="font-size:10px; text-transform:uppercase; letter-spacing:0.22em; color:#8A8378">01 — popover</div>
+
+    <div style="background:#1A1816; display:flex; flex-direction:column">
+      <!-- menubar -->
+      <div style="height:28px; display:flex; align-items:center; justify-content:space-between; padding:0 14px; background:#141210; border-bottom:1px solid #2E2B27">
+        <div style="display:flex; align-items:center; gap:20px; font-size:12px; color:#F4EFE6">
+          <span style="font-weight:700">todo</span>
+          <span style="color:#B8B2A7">datei</span>
+          <span style="color:#B8B2A7">bearbeiten</span>
+          <span style="color:#B8B2A7">ansicht</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:18px; font-size:12px; color:#F4EFE6">
+          <span style="display:flex; align-items:center; gap:7px; padding:2px 8px; background:#2E2B27">
+            <span style="width:6px; height:6px; background:#F4EFE6; display:block"></span>
+            <span style="font-variant-numeric:tabular-nums">{{ openCount }}</span>
+          </span>
+          <span style="color:#B8B2A7">wlan</span>
+          <span style="color:#B8B2A7; font-variant-numeric:tabular-nums">do 10. sep  9:41</span>
+        </div>
+      </div>
+
+      <!-- popover -->
+      <div style="display:flex; justify-content:flex-end; padding:10px 18px 96px"><div style="position:relative; width:376px; background:#F4EFE6; border:1px solid #B8B2A7; box-shadow:0 18px 48px rgba(20,18,16,0.35); display:flex; flex-direction:column">
+        <div style="width:14px; height:14px; background:#F4EFE6; border-left:1px solid #B8B2A7; border-top:1px solid #B8B2A7; transform:rotate(45deg); position:absolute; top:-8px; right:26px"></div>
+
+        <!-- eingabe -->
+        <div style="padding:14px 16px 12px; border-bottom:1px solid #DDD7CC; display:flex; flex-direction:column; gap:12px">
+          <input value="{{ draft }}" onChange="{{ onDraft }}" onKeyDown="{{ onDraftKey }}" placeholder="aufgabe hinzufügen" style="border:none; border-bottom:1px solid #DDD7CC; background:transparent; padding:4px 0 8px; font-size:15px; width:100%" />
+          <div style="display:flex; flex-wrap:wrap; gap:6px">
+            <sc-for list="{{ categories }}" as="cat" hint-placeholder-count="4">
+              <button onClick="{{ cat.pick }}" style="{{ cat.chipStyle }}">{{ cat.name }}</button>
+            </sc-for>
+          </div>
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:12px">
+            <div style="display:flex; gap:6px">
+              <sc-for list="{{ prios }}" as="p" hint-placeholder-count="3">
+                <button onClick="{{ p.pick }}" style="{{ p.chipStyle }}">{{ p.name }}</button>
+              </sc-for>
+            </div>
+            <button onClick="{{ addTask }}" style="border:1px solid #1A1816; background:#1A1816; color:#F4EFE6; font-size:11px; text-transform:uppercase; letter-spacing:0.12em; padding:7px 14px; cursor:pointer" style-hover="background:#2E2B27; border-color:#2E2B27">hinzufügen</button>
+          </div>
+        </div>
+
+        <!-- heute -->
+        <div style="padding:14px 16px 6px; display:flex; align-items:baseline; justify-content:space-between">
+          <span style="font-size:10px; text-transform:uppercase; letter-spacing:0.22em">heute · do 10. sep</span>
+          <span style="font-size:10px; letter-spacing:0.12em; color:#8A8378; font-variant-numeric:tabular-nums">{{ todayProgress }}</span>
+        </div>
+
+        <div style="display:flex; flex-direction:column; padding:0 0 6px; max-height:340px; overflow:auto">
+          <sc-for list="{{ todayTasks }}" as="t" hint-placeholder-count="5">
+            <div style="display:flex; gap:11px; align-items:flex-start; padding:9px 16px; border-bottom:1px solid #E7E1D6">
+              <button onClick="{{ t.toggle }}" style="{{ t.boxStyle }}"></button>
+              <div style="display:flex; flex-direction:column; gap:3px; flex:1; min-width:0">
+                <span style="{{ t.textStyle }}">{{ t.text }}</span>
+                <div style="display:flex; gap:10px; align-items:center; font-size:10px; text-transform:uppercase; letter-spacing:0.18em; color:#8A8378">
+                  <span>{{ t.cat }}</span>
+                  <sc-if value="{{ t.showPrio }}" hint-placeholder-val="{{ true }}"><span>{{ t.prioLabel }}</span></sc-if>
+                  <sc-if value="{{ t.carried }}" hint-placeholder-val="{{ false }}"><span style="color:#5C2A2A">{{ t.carriedLabel }}</span></sc-if>
+                </div>
+              </div>
+              <sc-if value="{{ t.isHigh }}" hint-placeholder-val="{{ false }}">
+                <span style="width:6px; height:6px; background:#1A1816; display:block; margin-top:6px; flex:none"></span>
+              </sc-if>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="padding:10px 16px; border-top:1px solid #DDD7CC; display:flex; justify-content:space-between; align-items:center; font-size:10px; text-transform:uppercase; letter-spacing:0.18em; color:#8A8378">
+          <span>{{ openCount }} offen</span>
+          <span style="display:flex; gap:14px">
+            <span>⌥ leertaste</span>
+            <span>woche</span>
+          </span>
+        </div>
+      </div></div>
+    </div>
+  </div>
+
+  <!-- ============ WOCHENFENSTER ============ -->
+  <div style="display:flex; flex-direction:column; gap:20px">
+    <div style="font-size:10px; text-transform:uppercase; letter-spacing:0.22em; color:#8A8378">02 — woche</div>
+
+    <div style="border:1px solid #B8B2A7; background:#F4EFE6; display:flex; flex-direction:column">
+      <div style="height:44px; display:flex; align-items:center; gap:16px; padding:0 14px; border-bottom:1px solid #DDD7CC; background:#EFEAE0">
+        <div style="display:flex; gap:8px">
+          <span style="width:11px; height:11px; border:1px solid #B8B2A7; display:block"></span>
+          <span style="width:11px; height:11px; border:1px solid #B8B2A7; display:block"></span>
+          <span style="width:11px; height:11px; border:1px solid #B8B2A7; display:block"></span>
+        </div>
+        <span style="font-size:11px; text-transform:uppercase; letter-spacing:0.18em">kalenderwoche 37 · 7.–13. september 2026</span>
+      </div>
+
+      <div style="overflow-x:auto"><div style="display:grid; grid-template-columns:repeat(7, minmax(168px,1fr)); min-width:1176px">
+        <sc-for list="{{ week }}" as="d" hint-placeholder-count="7">
+          <div style="{{ d.colStyle }}">
+            <div style="display:flex; flex-direction:column; gap:2px; padding:14px 12px 10px; border-bottom:1px solid #E7E1D6">
+              <span style="{{ d.dayLabelStyle }}">{{ d.label }}</span>
+              <span style="font-size:19px; font-variant-numeric:tabular-nums">{{ d.date }}</span>
+            </div>
+            <div style="display:flex; flex-direction:column; flex:1">
+              <sc-for list="{{ d.tasks }}" as="t" hint-placeholder-count="2">
+                <div style="display:flex; gap:9px; align-items:flex-start; padding:10px 12px; border-bottom:1px solid #E7E1D6">
+                  <button onClick="{{ t.toggle }}" style="{{ t.boxStyle }}"></button>
+                  <div style="display:flex; flex-direction:column; gap:4px; min-width:0; flex:1">
+                    <span style="{{ t.textStyleSm }}">{{ t.text }}</span>
+                    <span style="font-size:9px; text-transform:uppercase; letter-spacing:0.18em; color:#8A8378">{{ t.cat }}</span>
+                    <sc-if value="{{ t.carried }}" hint-placeholder-val="{{ false }}">
+                      <span style="font-size:9px; text-transform:uppercase; letter-spacing:0.18em; color:#5C2A2A">{{ t.carriedLabel }}</span>
+                    </sc-if>
+                  </div>
+                  <sc-if value="{{ t.isHigh }}" hint-placeholder-val="{{ false }}">
+                    <span style="width:5px; height:5px; background:#1A1816; display:block; margin-top:5px; flex:none"></span>
+                  </sc-if>
+                </div>
+              </sc-for>
+              <button onClick="{{ d.startAdd }}" style="text-align:left; border:none; background:transparent; padding:10px 12px; font-size:11px; color:#B8B2A7; cursor:pointer" style-hover="color:#1A1816">+ aufgabe</button>
+              <sc-if value="{{ d.adding }}" hint-placeholder-val="{{ false }}">
+                <div style="padding:0 12px 12px">
+                  <input value="{{ draft }}" onChange="{{ onDraft }}" onKeyDown="{{ d.onKey }}" placeholder="titel" autoFocus="{{ true }}" style="width:100%; border:none; border-bottom:1px solid #1A1816; background:transparent; font-size:13px; padding:3px 0 6px" />
+                </div>
+              </sc-if>
+            </div>
+          </div>
+        </sc-for>
+      </div></div>
+
+      <div style="display:flex; flex-wrap:wrap; gap:28px; padding:16px 14px; border-top:1px solid #DDD7CC; font-size:10px; text-transform:uppercase; letter-spacing:0.18em; color:#8A8378">
+        <span style="display:flex; align-items:center; gap:8px"><span style="width:6px; height:6px; background:#1A1816; display:block"></span>hoch</span>
+        <span style="display:flex; align-items:center; gap:8px"><span style="color:#5C2A2A">+n tage</span>übertragen</span>
+        <span>{{ carriedCount }} übertragene aufgaben</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;prioritySystem&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;drei stufen&quot;,&quot;flag&quot;],&quot;default&quot;:&quot;drei stufen&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;verhalten&quot;},&quot;markCarried&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;verhalten&quot;},&quot;showProgress&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;verhalten&quot;}}">
+const CATS = ["cesa", "admin", "privat", "deep work"];
+const PRIOS = ["hoch", "mittel", "niedrig"];
+const RANK = { hoch: 0, mittel: 1, niedrig: 2 };
+const DAYS = [
+  { label: "montag", date: "07" },
+  { label: "dienstag", date: "08" },
+  { label: "mittwoch", date: "09" },
+  { label: "donnerstag", date: "10" },
+  { label: "freitag", date: "11" },
+  { label: "samstag", date: "12" },
+  { label: "sonntag", date: "13" }
+];
+const TODAY = 3;
+
+const CHIP = "font-size:10px; text-transform:uppercase; letter-spacing:0.14em; padding:5px 9px; cursor:pointer; background:transparent;";
+const chip = (on) => CHIP + (on ? "border:1px solid #1A1816; color:#1A1816;" : "border:1px solid #DDD7CC; color:#8A8378;");
+const box = (done) => "width:14px; height:14px; flex:none; margin-top:2px; cursor:pointer; padding:0; border:1px solid " +
+  (done ? "#1A1816; background:#1A1816;" : "#B8B2A7; background:transparent;");
+const txt = (done, size) => "font-size:" + size + "px; line-height:1.4; text-wrap:pretty; " +
+  (done ? "color:#B8B2A7; text-decoration:line-through; text-decoration-thickness:1px;" : "color:#1A1816;");
+
+class Component extends DCLogic {
+  state = {
+    draft: "",
+    cat: "cesa",
+    prio: "mittel",
+    addingDay: null,
+    nextId: 100,
+    tasks: [
+      { id: 1, text: "aw26 lookbook — bildauswahl finalisieren", cat: "cesa", prio: "hoch", day: 3, done: false, carried: 2 },
+      { id: 2, text: "porto: stoffmuster 380 gsm nachfassen", cat: "cesa", prio: "hoch", day: 3, done: false, carried: 0 },
+      { id: 3, text: "rechnungen august ablegen", cat: "admin", prio: "niedrig", day: 3, done: true, carried: 0 },
+      { id: 4, text: "produkttexte hoodie schreiben", cat: "deep work", prio: "mittel", day: 3, done: false, carried: 1 },
+      { id: 5, text: "zahnarzt anrufen", cat: "privat", prio: "mittel", day: 3, done: false, carried: 0 },
+      { id: 6, text: "newsletter #14 gegenlesen", cat: "cesa", prio: "mittel", day: 0, done: true, carried: 0 },
+      { id: 7, text: "steuerberater unterlagen", cat: "admin", prio: "hoch", day: 1, done: true, carried: 0 },
+      { id: 8, text: "casting-shortlist durchgehen", cat: "cesa", prio: "mittel", day: 2, done: true, carried: 0 },
+      { id: 9, text: "hangtag-druck freigeben", cat: "cesa", prio: "hoch", day: 4, done: false, carried: 0 },
+      { id: 10, text: "saisonplanung ss27 skizzieren", cat: "deep work", prio: "mittel", day: 4, done: false, carried: 0 },
+      { id: 11, text: "lager sortieren", cat: "admin", prio: "niedrig", day: 5, done: false, carried: 0 },
+      { id: 12, text: "spaziergang, ohne telefon", cat: "privat", prio: "niedrig", day: 6, done: false, carried: 0 }
+    ]
+  };
+
+  add(day) {
+    const text = this.state.draft.trim();
+    if (!text) return;
+    this.setState((s) => ({
+      draft: "",
+      addingDay: null,
+      nextId: s.nextId + 1,
+      tasks: s.tasks.concat([{ id: s.nextId, text, cat: s.cat, prio: s.prio, day, done: false, carried: 0 }])
+    }));
+  }
+
+  toggle(id) {
+    this.setState((s) => ({ tasks: s.tasks.map((t) => (t.id === id ? Object.assign({}, t, { done: !t.done }) : t)) }));
+  }
+
+  wrap(t, showPrio) {
+    const flagOnly = (this.props.prioritySystem ?? "drei stufen") === "flag";
+    return {
+      id: t.id, text: t.text, cat: t.cat, carried: (this.props.markCarried ?? true) && t.carried > 0,
+      carriedLabel: "+" + t.carried + (t.carried === 1 ? " tag" : " tage"),
+      prioLabel: t.prio, showPrio: showPrio && !flagOnly,
+      isHigh: t.prio === "hoch" && !t.done,
+      boxStyle: box(t.done), textStyle: txt(t.done, 14), textStyleSm: txt(t.done, 12),
+      toggle: () => this.toggle(t.id)
+    };
+  }
+
+  renderVals() {
+    const ts = this.state.tasks;
+    const sorted = (list) => list.slice().sort((a, b) => (a.done - b.done) || (RANK[a.prio] - RANK[b.prio]) || (b.carried - a.carried));
+    const today = sorted(ts.filter((t) => t.day === TODAY));
+    const open = ts.filter((t) => !t.done && t.day <= TODAY).length;
+
+    return {
+      draft: this.state.draft,
+      onDraft: (e) => this.setState({ draft: e.target.value }),
+      onDraftKey: (e) => { if (e.key === "Enter") this.add(TODAY); },
+      addTask: () => this.add(TODAY),
+      categories: CATS.map((name) => ({ name, chipStyle: chip(this.state.cat === name), pick: () => this.setState({ cat: name }) })),
+      prios: ((this.props.prioritySystem ?? "drei stufen") === "flag" ? ["wichtig"] : PRIOS).map((name) => ({
+        name,
+        chipStyle: chip(this.state.prio === name || (name === "wichtig" && this.state.prio === "hoch")),
+        pick: () => this.setState({ prio: name === "wichtig" ? "hoch" : name })
+      })),
+      todayTasks: today.map((t) => this.wrap(t, true)),
+      todayProgress: (this.props.showProgress ?? true) ? today.filter((t) => t.done).length + " / " + today.length : "",
+      openCount: open,
+      carriedCount: ts.filter((t) => t.carried > 0 && !t.done).length,
+      week: DAYS.map((d, i) => ({
+        label: d.label, date: d.date,
+        dayLabelStyle: "font-size:10px; text-transform:uppercase; letter-spacing:0.22em; color:" + (i === TODAY ? "#1A1816" : "#8A8378"),
+        colStyle: "display:flex; flex-direction:column; min-height:300px; border-right:" + (i === 6 ? "none" : "1px solid #E7E1D6") +
+          (i === TODAY ? "; background:#EFEAE0" : ""),
+        tasks: sorted(ts.filter((t) => t.day === i)).map((t) => this.wrap(t, false)),
+        adding: this.state.addingDay === i,
+        startAdd: () => this.setState({ addingDay: i, draft: "" }),
+        onKey: (e) => { if (e.key === "Enter") this.add(i); if (e.key === "Escape") this.setState({ addingDay: null, draft: "" }); }
+      }))
+    };
+  }
+}
+</script>
+</body>
+</html>
