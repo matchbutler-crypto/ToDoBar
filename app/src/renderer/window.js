@@ -58,10 +58,13 @@
    * Projektordner, Berechtigungsproblem, …). Beendet die App erst, bevor das
    * Bundle in /Applications ersetzt wird — nicht währenddessen.
    */
-  const UPDATE_COMMAND =
-    "cd ~/ToDoBar && git pull --ff-only && cd app && npm install && npx electron-builder --mac --dir && " +
-    'APP=$(find dist -maxdepth 2 -name "Todo.app" | head -1) && killall Todo 2>/dev/null; sleep 1; ' +
-    'rm -rf /Applications/Todo.app && cp -R "$APP" /Applications/Todo.app && open -a Todo';
+  function buildUpdateCommand(appName, repoPath) {
+    return (
+      'cd "' + repoPath + '" && git pull --ff-only && cd app && npm install && npx electron-builder --mac && ' +
+      'APP=$(find dist -maxdepth 2 -name "' + appName + '.app" | head -1) && killall ' + appName + ' 2>/dev/null; sleep 1; ' +
+      'rm -rf "/Applications/' + appName + '.app" && cp -R "$APP" "/Applications/' + appName + '.app" && open -a "' + appName + '"'
+    );
+  }
 
   function renderTabs(view) {
     UI.clear(els.tabs);
@@ -265,7 +268,10 @@
           h("button", {
             class: "cat-remove",
             text: "Befehl manuell kopieren",
-            onClick: () => window.todo.copyToClipboard(UPDATE_COMMAND)
+            onClick: () =>
+              window.todo.copyToClipboard(
+                buildUpdateCommand(state.appName || "Checkbar", state.settings.repoPath || "~/ToDoBar")
+              )
           })
         ])
       );

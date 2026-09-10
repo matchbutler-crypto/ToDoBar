@@ -226,10 +226,19 @@ test("Pfad mit ~ wird zum Home-Verzeichnis aufgelöst", () => {
 });
 
 test("findBuiltApp findet arm64/mac/universal, sonst null", () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "todo-findapp-"));
-  assert.strictEqual(SelfUpdate.findBuiltApp(dir), null, "noch nichts gebaut");
-  fs.mkdirSync(path.join(dir, "dist", "mac", "Todo.app"), { recursive: true });
-  assert.strictEqual(SelfUpdate.findBuiltApp(dir), path.join(dir, "dist", "mac", "Todo.app"));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "checkbar-findapp-"));
+  assert.strictEqual(SelfUpdate.findBuiltApp(dir, "Checkbar"), null, "noch nichts gebaut");
+  fs.mkdirSync(path.join(dir, "dist", "mac", "Checkbar.app"), { recursive: true });
+  assert.strictEqual(SelfUpdate.findBuiltApp(dir, "Checkbar"), path.join(dir, "dist", "mac", "Checkbar.app"));
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
+test("findBuiltDmg findet die erste .dmg im dist-Ordner, sonst null", () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "checkbar-finddmg-"));
+  assert.strictEqual(SelfUpdate.findBuiltDmg(dir), null, "dist existiert noch nicht");
+  fs.mkdirSync(path.join(dir, "dist"), { recursive: true });
+  fs.writeFileSync(path.join(dir, "dist", "Checkbar-1.2.0-arm64.dmg"), "");
+  assert.strictEqual(SelfUpdate.findBuiltDmg(dir), path.join(dir, "dist", "Checkbar-1.2.0-arm64.dmg"));
   fs.rmSync(dir, { recursive: true, force: true });
 });
 
@@ -242,8 +251,8 @@ console.log("\n" + passed + " Prüfungen bestanden.");
  * Ergebnis-Pfad) trotzdem echt end-to-end prüfen lässt.
  */
 async function testSelfUpdateOrchestration() {
-  const fakeBin = fs.mkdtempSync(path.join(os.tmpdir(), "todo-fakebin-"));
-  const repo = fs.mkdtempSync(path.join(os.tmpdir(), "todo-fakerepo-"));
+  const fakeBin = fs.mkdtempSync(path.join(os.tmpdir(), "checkbar-fakebin-"));
+  const repo = fs.mkdtempSync(path.join(os.tmpdir(), "checkbar-fakerepo-"));
   fs.mkdirSync(path.join(repo, "app"), { recursive: true });
 
   const write = (name, body) => {
@@ -255,12 +264,12 @@ async function testSelfUpdateOrchestration() {
   write(
     "npx",
     'echo "FAKE npx $@"\n' +
-      'if echo "$@" | grep -q electron-builder; then mkdir -p dist/mac-arm64/Todo.app; fi'
+      'if echo "$@" | grep -q electron-builder; then mkdir -p dist/mac-arm64/Checkbar.app; touch dist/Checkbar-1.2.0-arm64.dmg; fi'
   );
 
   const opts = { login: false, env: { PATH: fakeBin + ":" + process.env.PATH, SHELL: "/bin/sh" } };
   let log = "";
-  const built = await SelfUpdate.pullAndBuild(repo, (t) => (log += t), opts);
+  const built = await SelfUpdate.pullAndBuild(repo, (t) => (log += t), "Checkbar", opts);
 
   await asyncTest("pullAndBuild: ruft git → npm → npx in der richtigen Reihenfolge auf", async () => {
     const gitAt = log.indexOf("FAKE git pull");
@@ -270,14 +279,21 @@ async function testSelfUpdateOrchestration() {
   });
 
   await asyncTest("pullAndBuild: findet das gebaute Bundle", async () => {
-    assert.strictEqual(built, path.join(repo, "app", "dist", "mac-arm64", "Todo.app"));
+    assert.strictEqual(built, path.join(repo, "app", "dist", "mac-arm64", "Checkbar.app"));
+  });
+
+  await asyncTest("pullAndBuild baut nebenbei auch die DMG (für einen Release)", async () => {
+    assert.strictEqual(
+      SelfUpdate.findBuiltDmg(path.join(repo, "app")),
+      path.join(repo, "app", "dist", "Checkbar-1.2.0-arm64.dmg")
+    );
   });
 
   await asyncTest("pullAndBuild: bricht mit sprechendem Fehler ab, wenn ein Schritt scheitert", async () => {
     write("npm", "exit 1");
     let error = null;
     try {
-      await SelfUpdate.pullAndBuild(repo, () => {}, opts);
+      await SelfUpdate.pullAndBuild(repo, () => {}, "Checkbar", opts);
     } catch (err) {
       error = err;
     }
@@ -288,7 +304,7 @@ async function testSelfUpdateOrchestration() {
   await asyncTest("pullAndBuild: meldet einen fehlenden Projektordner klar", async () => {
     let error = null;
     try {
-      await SelfUpdate.pullAndBuild(path.join(repo, "nicht-da"), () => {}, opts);
+      await SelfUpdate.pullAndBuild(path.join(repo, "nicht-da"), () => {}, "Checkbar", opts);
     } catch (err) {
       error = err;
     }

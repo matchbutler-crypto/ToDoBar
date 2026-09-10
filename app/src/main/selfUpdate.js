@@ -6,12 +6,17 @@
  *
  *   1) pullAndBuild(): git pull, npm install, electron-builder — läuft ganz
  *      normal, während die App weiterläuft. Nichts Live-Laufendes wird
- *      angefasst, das gebaute Bundle landet nur in app/dist/.
+ *      angefasst, das gebaute Bundle landet nur in app/dist/. Baut den
+ *      vollen electron-builder-Durchlauf (nicht nur --dir), damit dabei
+ *      gleich auch die DMG für einen GitHub-Release mit entsteht.
  *   2) scheduleReplaceAndRelaunch(): ein eigenständiges Shell-Skript, das
  *      erst NACH dem eigenen app.quit() läuft — beendet die App (Sicherheits-
  *      netz, falls quit() hängt), kopiert das gebaute Bundle nach
  *      /Applications und öffnet es neu. Läuft "detached", übersteht also das
  *      Beenden dieses Prozesses.
+ *
+ * Der App-Name ist überall ein Parameter statt fest verdrahtet — bei einer
+ * Umbenennung genügt es, `productName` in package.json zu ändern.
  *
  * Reines Node (kein Electron-Import), damit es sich ohne Electron-Laufzeit
  * testen lässt.
@@ -60,18 +65,26 @@ function runShell(command, cwd, onLog, opts) {
 }
 
 /** Sucht das von electron-builder gebaute Bundle (Architektur kann variieren). */
-function findBuiltApp(appDir) {
+function findBuiltApp(appDir, appName) {
   const distDir = path.join(appDir, "dist");
   const candidates = ["mac-arm64", "mac-universal", "mac"];
   for (let i = 0; i < candidates.length; i++) {
-    const p = path.join(distDir, candidates[i], "Todo.app");
+    const p = path.join(distDir, candidates[i], appName + ".app");
     if (fs.existsSync(p)) return p;
   }
   return null;
 }
 
+/** Sucht die von electron-builder gebaute DMG (für einen GitHub-Release). */
+function findBuiltDmg(appDir) {
+  const distDir = path.join(appDir, "dist");
+  if (!fs.existsSync(distDir)) return null;
+  const dmg = fs.readdirSync(distDir).find((f) => f.endsWith(".dmg"));
+  return dmg ? path.join(distDir, dmg) : null;
+}
+
 /** Phase 1: pullen und bauen. Wirft mit einer sprechenden Meldung, wenn ein Schritt fehlschlägt. */
-async function pullAndBuild(repoPath, onLog, opts) {
+async function pullAndBuild(repoPath, onLog, appName, opts) {
   const root = expandHome(repoPath);
   if (!fs.existsSync(root)) {
     throw new Error("Projektordner nicht gefunden: " + root + " — Pfad in den Einstellungen prüfen.");
@@ -85,20 +98,20 @@ async function pullAndBuild(repoPath, onLog, opts) {
   await runShell("npm install", appDir, onLog, opts);
 
   onLog("\n→ electron-builder\n");
-  await runShell("npx electron-builder --mac --dir", appDir, onLog, opts);
+  await runShell("npx electron-builder --mac", appDir, onLog, opts);
 
-  const built = findBuiltApp(appDir);
-  if (!built) throw new Error("Gebaute App nicht gefunden (app/dist/mac*/Todo.app).");
+  const built = findBuiltApp(appDir, appName);
+  if (!built) throw new Error("Gebaute App nicht gefunden (app/dist/mac*/" + appName + ".app).");
   return built;
 }
 
 /** Phase 2: eigenständiges Skript — läuft erst nach dem eigenen Beenden, übersteht es also. */
-function scheduleReplaceAndRelaunch(builtAppPath, targetAppPath) {
-  const target = targetAppPath || "/Applications/Todo.app";
+function scheduleReplaceAndRelaunch(builtAppPath, appName, targetAppPath) {
+  const target = targetAppPath || "/Applications/" + appName + ".app";
   const script = [
     "#!/bin/sh",
     "sleep 1",
-    'pkill -f "' + target + '/Contents/MacOS/Todo" 2>/dev/null',
+    'pkill -f "' + target + '/Contents/MacOS/' + appName + '" 2>/dev/null',
     "sleep 1",
     'rm -rf "' + target + '"',
     'cp -R "' + builtAppPath + '" "' + target + '"',
@@ -106,7 +119,7 @@ function scheduleReplaceAndRelaunch(builtAppPath, targetAppPath) {
     'open "' + target + '"'
   ].join("\n");
 
-  const scriptPath = path.join(os.tmpdir(), "todo-self-update-" + Date.now() + ".sh");
+  const scriptPath = path.join(os.tmpdir(), "checkbar-self-update-" + Date.now() + ".sh");
   fs.writeFileSync(scriptPath, script, { mode: 0o755 });
 
   const child = spawn("/bin/sh", [scriptPath], { detached: true, stdio: "ignore" });
@@ -118,6 +131,7 @@ module.exports = {
   expandHome: expandHome,
   runShell: runShell,
   findBuiltApp: findBuiltApp,
+  findBuiltDmg: findBuiltDmg,
   pullAndBuild: pullAndBuild,
   scheduleReplaceAndRelaunch: scheduleReplaceAndRelaunch
 };

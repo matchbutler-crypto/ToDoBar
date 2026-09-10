@@ -1,8 +1,8 @@
 {
-  "name": "cesa-todo",
-  "productName": "Todo",
-  "version": "1.1.0",
-  "description": "Menübar-Todo für macOS — schneller Eintrag aus der Menübar, Fenster für Planung, Archiv und Einstellungen.",
+  "name": "checkbar",
+  "productName": "Checkbar",
+  "version": "1.2.0",
+  "description": "Checkbar — die Menübar-Todo-App für macOS: Aufgaben in Sekunden eintragen, Tag und Woche planen, Unerledigtes wandert automatisch weiter.",
   "main": "src/main/index.js",
   "private": true,
   "scripts": {
@@ -17,13 +17,14 @@
     "electron-builder": "^26.0.12"
   },
   "build": {
-    "appId": "de.cesa.todo",
-    "productName": "Todo",
+    "appId": "de.cesa.checkbar",
+    "productName": "Checkbar",
     "files": [
       "src/**/*",
       "assets/**/*"
     ],
     "mac": {
+      "icon": "build/icon.png",
       "category": "public.app-category.productivity",
       "target": [
         "dmg"

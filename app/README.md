@@ -1,7 +1,8 @@
-# Todo — Menübar-App für macOS
+# Checkbar — Menübar-App für macOS
 
 Umsetzung des Designs **„Todo Menubar v3 Apple"** aus dem Claude-Design-Handoff
-(`../project/Todo Menubar v3 Apple.dc.html`) als lauffähige Electron-App.
+(`../project/Todo Menubar v3 Apple.dc.html`) als lauffähige Electron-App, seit
+Version 1.2 unter dem Namen **Checkbar**.
 
 Zwei Oberflächen, genau wie im Entwurf:
 
@@ -11,15 +12,20 @@ Zwei Oberflächen, genau wie im Entwurf:
   Tagesplanung („Heute" und „Diese Woche").
 
 <p>
-  <img src="shots/popover.png" alt="Menübar-Popover" width="360">
-  <img src="shots/fenster-planung.png" alt="Fenster: Planung" width="520">
+  <img src="shots/popover.png" alt="Checkbar-Popover" width="360">
+  <img src="shots/fenster-planung.png" alt="Checkbar-Fenster: Planung" width="520">
 </p>
 <p>
-  <img src="shots/fenster-archiv.png" alt="Fenster: Archiv" width="420">
-  <img src="shots/fenster-einstellungen.png" alt="Fenster: Einstellungen" width="420">
+  <img src="shots/fenster-archiv.png" alt="Checkbar-Fenster: Archiv" width="420">
+  <img src="shots/fenster-einstellungen.png" alt="Checkbar-Fenster: Einstellungen" width="420">
 </p>
 
 ## Starten
+
+**Fertige `.dmg`:** [Releases](../../releases) → neueste Version herunterladen,
+öffnen, `Checkbar.app` nach `/Applications` ziehen.
+
+**Aus dem Quellcode:**
 
 ```bash
 npm install
@@ -30,14 +36,28 @@ npm run demo       # beim allerersten Start mit den Beispieldaten aus dem Entwur
 `npm start` öffnet kein Fenster — die App lebt in der Menübar. Klick auf das Symbol
 öffnet das Popover, Rechtsklick das Fenster, **⌥ Leertaste** schaltet das Popover um.
 
-Fertige `.app`/`.dmg` bauen (nur auf einem Mac):
+Die App ist als `LSUIElement` gebaut, erscheint also nicht im Dock — außer solange
+das Fenster offen ist.
+
+## Ein Release veröffentlichen
 
 ```bash
 npm run dist
 ```
 
-Die App ist als `LSUIElement` gebaut, erscheint also nicht im Dock — außer solange
-das Fenster offen ist.
+Baut `app/dist/Checkbar-<Version>-arm64.dmg` (electron-builder, Icon aus
+`build/icon.png`). Dann auf GitHub: **Releases → Draft a new release** → Tag
+`vX.Y.Z` → die `.dmg` reinziehen → veröffentlichen. Version vorher in
+`package.json` hochzählen, damit der Update-Check in der App (siehe unten)
+merkt, dass es etwas Neues gibt.
+
+Wer die `gh`-CLI installiert hat, kann das auch in einem Rutsch:
+
+```bash
+gh release create v$(node -p "require('./package.json').version") \
+  app/dist/*.dmg --title "Checkbar $(node -p "require('./package.json').version")" \
+  --generate-notes
+```
 
 ## Was implementiert ist
 
@@ -55,21 +75,24 @@ das Fenster offen ist.
 | Tagesfortschritt | Zähler und Balken, abschaltbar |
 | Aufgaben löschen | Löschen-Symbol (×) erscheint beim Hover über eine Zeile — Popover, Heute, Diese Woche, Archiv |
 | Aufgeräumte Eingabe | Kategorie/Priorität/Ziel/Wiederholung erscheinen erst, sobald Text im Feld steht — im Popover wie im Fenster |
-| Update-Hinweis | Einstellungen → Software: Versionscheck gegen GitHub, „Update installieren" zieht/baut/ersetzt/startet neu — ein Klick, läuft im Hintergrund |
+| Update per Klick | Einstellungen → Software: Versionscheck gegen GitHub, „Update installieren" zieht/baut/ersetzt/startet neu, im Hintergrund |
 
 Alles liegt in einer JSON-Datei unter
-`~/Library/Application Support/Todo/todo.json` (atomar geschrieben, kein Server,
-keine Cloud).
+`~/Library/Application Support/Checkbar/todo.json` (atomar geschrieben, kein
+Server, keine Cloud).
 
 ## Aufbau
 
 ```
+build/
+  icon.png    1024×1024-Icon (electron-builder wandelt es beim Bauen in .icns um)
 src/
   main/       Electron-Hauptprozess: Tray, Popover, Fenster, Menü, Persistenz
     index.js      Fenster/Tray/Kurzbefehl/Menü, IPC, Tageswechsel-Wächter
     store.js      Laden, Speichern, Abonnenten
     sampleData.js Beispieldaten für `npm run demo`
     update.js     Versionscheck gegen GitHub (reines Node, kein Electron)
+    selfUpdate.js Ein-Klick-Installieren: pull, bauen, ersetzen, neu starten (reines Node)
   preload/    contextBridge — der einzige Weg vom Renderer zum Store
   renderer/   Popover und Fenster (reines HTML/CSS/JS, kein Build-Schritt)
     base.css      Designtokens und geteilte Bausteine
@@ -85,6 +108,11 @@ Content-Security-Policy) und reden ausschließlich über `window.todo` mit dem
 Hauptprozess. Der Zustand liegt komplett im Hauptprozess; die Renderer bekommen ihn
 bei jeder Änderung geschickt und rechnen sich daraus ihre Ansicht aus. Popover und
 Fenster bleiben so automatisch im Gleichschritt.
+
+Der App-Name steckt nur in `package.json` (`productName`) — alles andere (Menüs,
+Fenstertitel, `/Applications/<Name>.app`, der kopierbare Update-Befehl) liest ihn
+zur Laufzeit über `app.getName()` aus. Eine erneute Umbenennung ist also eine
+Ein-Zeilen-Änderung, kein Suchen-und-Ersetzen im ganzen Code.
 
 ## Tests
 
@@ -105,10 +133,11 @@ Ist ein Update da, erscheint **„Update installieren"**. Ein Klick, und im Hint
 läuft (mit Live-Log in der Karte, für den Fall dass mal etwas schiefgeht):
 
 1. `git pull --ff-only` im Projektordner (Einstellungen → „Projektordner", Standard `~/ToDoBar`)
-2. `npm install` und `npx electron-builder --mac --dir` in `app/` — die App läuft während des
-   Bauens normal weiter, es wird nichts Live-Laufendes angefasst
-3. erst danach: App beenden, `/Applications/Todo.app` ersetzen, neu öffnen — das läuft als
-   eigenständiges, vom Hauptprozess losgelöstes Skript, übersteht also dessen Beenden
+2. `npm install` und `npx electron-builder --mac` in `app/` — voller Build, nicht nur
+   `--dir`, damit dabei gleich auch die `.dmg` für einen Release mit entsteht. Die App läuft
+   während des Bauens normal weiter, es wird nichts Live-Laufendes angefasst
+3. erst danach: App beenden, `/Applications/Checkbar.app` ersetzen, neu öffnen — das läuft
+   als eigenständiges, vom Hauptprozess losgelöstes Skript, übersteht also dessen Beenden
 
 Kein signiertes Auto-Update im Apple-Sinn — dafür bräuchte es eine kostenpflichtige
 Entwickler-Signierung. Der Unterschied hier: Es ist derselbe lokale
@@ -138,10 +167,13 @@ Bewusst und begründet:
   nutzt stattdessen die echten macOS-Knöpfe, exakt an dieselbe Stelle gesetzt
   (`trafficLightPosition: { x: 16, y: 20 }`) — sie sollen ja schließen und minimieren.
 - **Menüleiste.** Der Entwurf zeigt eine nachgebaute Menübar („Todo · Datei · Bearbeiten ·
-  Ansicht"). Daraus ist ein echtes Programmmenü mit denselben Titeln geworden.
+  Ansicht"). Daraus ist ein echtes Programmmenü mit demselben Aufbau geworden.
 - **Datum.** Statt des festen „Do 10. Sep" rechnet die App mit dem echten Datum, in
   derselben Schreibweise.
 - **Rahmen und Schatten des Fensters** kommen unter macOS vom System, nicht aus CSS.
+- **App-Icon.** Der Entwurf hatte keins vorgesehen — für einen echten Release gehört
+  eins dazu: ein abgerundetes Quadrat in Ink (`#1A1816`) mit einem Häkchen in Paper
+  (`#F7F3EC`), aus derselben Palette wie der Rest.
 
 Farben, Maße, Abstände, Schriftgrößen und Helvetica sind unverändert aus dem Entwurf
 übernommen.
@@ -154,4 +186,4 @@ Farben, Maße, Abstände, Schriftgrößen und Helvetica sind unverändert aus de
   Gatekeeper; für den Eigengebrauch reicht Rechtsklick → Öffnen.
 - Autostart bei der Anmeldung läuft über die systemeigenen Anmeldeobjekte
   (Systemeinstellungen → Allgemein → Anmeldeobjekte & Erweiterungen), kein Schalter in
-  der App nötig — siehe Chat-Verlauf für die Schritte.
+  der App nötig.

@@ -184,18 +184,19 @@ function createMainWindow(tab) {
 /* ------------------------------------------------------------------- Menü */
 
 function buildMenu() {
+  const name = app.getName();
   const template = [
     {
-      label: "Todo",
+      label: name,
       submenu: [
-        { role: "about", label: "Über Todo" },
+        { role: "about", label: "Über " + name },
         { type: "separator" },
         { label: "Einstellungen…", accelerator: "Cmd+,", click: () => createMainWindow("Einstellungen") },
         { type: "separator" },
-        { role: "hide", label: "Todo ausblenden" },
+        { role: "hide", label: name + " ausblenden" },
         { role: "hideOthers", label: "Andere ausblenden" },
         { type: "separator" },
-        { role: "quit", label: "Todo beenden" }
+        { role: "quit", label: name + " beenden" }
       ]
     },
     {
@@ -301,9 +302,9 @@ function registerIpc() {
 
     send({ stage: "start" });
     try {
-      const built = await SelfUpdate.pullAndBuild(repoPath, onLog);
+      const built = await SelfUpdate.pullAndBuild(repoPath, onLog, app.getName());
       send({ stage: "relaunching" });
-      SelfUpdate.scheduleReplaceAndRelaunch(built);
+      SelfUpdate.scheduleReplaceAndRelaunch(built, app.getName());
       // Kurze Verzögerung, damit die letzte IPC-Nachricht noch ankommt, bevor wir beenden.
       setTimeout(() => app.quit(), 300);
     } catch (err) {

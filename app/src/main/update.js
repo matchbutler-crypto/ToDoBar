@@ -16,7 +16,7 @@ const TIMEOUT_MS = 10000;
 function fetchJSON(reqPath, token) {
   return new Promise((resolve, reject) => {
     const headers = {
-      "User-Agent": "Todo-Menubar-App",
+      "User-Agent": "Checkbar-App",
       Accept: "application/vnd.github+json"
     };
     if (token) headers.Authorization = "Bearer " + token;
