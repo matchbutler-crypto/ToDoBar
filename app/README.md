@@ -44,8 +44,11 @@ das Fenster offen ist.
 | Drei Prioritätsstufen | Hoch / Mittel / Niedrig, „Hoch" zusätzlich mit Punkt am Zeilenende |
 | Notiz und Unteraufgaben | Klick auf den Aufgabentext klappt beides auf |
 | Wiederkehrende Aufgaben | Täglich / Wöchentlich — beim Abhaken entsteht die nächste Instanz |
-| Erledigt-Archiv | Nach Tagen gruppiert; Klick auf den Punkt öffnet eine Aufgabe wieder |
+| Erledigt-Archiv | Nach Tagen gruppiert; Klick auf den Punkt öffnet eine Aufgabe wieder, Löschen-Symbol entfernt endgültig |
 | Tagesfortschritt | Zähler und Balken, abschaltbar |
+| Aufgaben löschen | Löschen-Symbol (×) erscheint beim Hover über eine Zeile — Popover, Heute, Diese Woche, Archiv |
+| Aufgeräumte Eingabe | Kategorie/Priorität/Ziel/Wiederholung erscheinen erst, sobald Text im Feld steht — im Popover wie im Fenster |
+| Update-Hinweis | Einstellungen → Software: Versionscheck gegen GitHub, kein Auto-Install |
 
 Alles liegt in einer JSON-Datei unter
 `~/Library/Application Support/Todo/todo.json` (atomar geschrieben, kein Server,
@@ -59,6 +62,7 @@ src/
     index.js      Fenster/Tray/Kurzbefehl/Menü, IPC, Tageswechsel-Wächter
     store.js      Laden, Speichern, Abonnenten
     sampleData.js Beispieldaten für `npm run demo`
+    update.js     Versionscheck gegen GitHub (reines Node, kein Electron)
   preload/    contextBridge — der einzige Weg vom Renderer zum Store
   renderer/   Popover und Fenster (reines HTML/CSS/JS, kein Build-Schritt)
     base.css      Designtokens und geteilte Bausteine
@@ -84,6 +88,28 @@ npm run shots      # rendert beide Oberflächen nach shots/
 
 Unter Linux brauchen die Electron-Teile einen X-Server: `xvfb-run -a npm test`.
 
+## Update-Check
+
+Einstellungen → Software → „Nach Updates suchen" vergleicht die eigene Versionsnummer
+mit `app/package.json` auf dem `todo-menubar-app`-Branch bei GitHub. Kein Hintergrund-Check,
+kein automatisches Herunterladen oder Installieren — bewusst so:
+
+- **Ohne kostenpflichtige Apple-Signierung installiert sich eine Electron-App auf macOS
+  nicht sauber selbst neu.** Ein signiertes Update würde beim Ersetzen der `.app` wieder
+  von Gatekeeper blockiert, mit derselben Rechtsklick-→-Öffnen-Hürde wie beim Erststart.
+  Ein „Update verfügbar, installiert sich von selbst" wäre also nur Show.
+- Steht ein Update an, zeigt die Karte „Update verfügbar: Version X" und einen Knopf
+  **„Befehl kopieren"** — kopiert einen einzeiligen Terminal-Befehl (git pull, neu bauen,
+  in /Applications kopieren, App neu starten) in die Zwischenablage. Einfügen, Enter,
+  fertig — dieselben Schritte wie beim Erststart, nur als ein Befehl statt fünf.
+- **Privates Repo:** `matchbutler-crypto/ToDoBar` ist nicht öffentlich lesbar, daher
+  schlägt der Check ohne Token mit einer klaren Fehlermeldung fehl. Ein
+  Feingranular-Token mit **nur Lesezugriff auf genau dieses Repo** (GitHub →
+  Settings → Developer settings → Fine-grained tokens) trägst du unten im
+  Einstellungen-Feld ein. Er bleibt ausschließlich lokal in derselben `todo.json` wie
+  deine Aufgaben — wird nirgendwo sonst hingeschickt außer an `api.github.com`, wenn du
+  selbst auf „Nach Updates suchen" klickst.
+
 ## Abweichungen vom Prototyp
 
 Bewusst und begründet:
@@ -106,5 +132,6 @@ Farben, Maße, Abstände, Schriftgrößen und Helvetica sind unverändert aus de
   hast du dich für drei Stufen entschieden, deshalb ist nur das eingebaut.
 - Die App ist nicht signiert und nicht notarisiert. Beim ersten Start meldet sich
   Gatekeeper; für den Eigengebrauch reicht Rechtsklick → Öffnen.
-- Kein Autostart bei der Anmeldung — sag Bescheid, dann kommt ein Schalter dafür in die
-  Einstellungen.
+- Autostart bei der Anmeldung läuft über die systemeigenen Anmeldeobjekte
+  (Systemeinstellungen → Allgemein → Anmeldeobjekte & Erweiterungen), kein Schalter in
+  der App nötig — siehe Chat-Verlauf für die Schritte.

@@ -4,6 +4,7 @@ const path = require("path");
 const {
   app,
   BrowserWindow,
+  clipboard,
   Menu,
   Tray,
   globalShortcut,
@@ -16,6 +17,7 @@ const {
 const Store = require("./store.js");
 const Model = require("../shared/model.js");
 const Dates = require("../shared/dates.js");
+const Update = require("./update.js");
 
 const IS_MAC = process.platform === "darwin";
 const DEMO = process.argv.includes("--demo");
@@ -254,6 +256,35 @@ function registerIpc() {
   ipcMain.on("window:open", (_e, tab) => {
     hidePopover();
     createMainWindow(tab || "Planung");
+  });
+
+  ipcMain.handle("update:check", async () => {
+    const token = (store.get().settings.updateToken || "").trim() || null;
+    store.dispatch({ type: "setUpdateStatus", status: { checking: true, error: null } });
+    try {
+      const result = await Update.checkForUpdate(app.getVersion(), token);
+      store.dispatch({
+        type: "setUpdateStatus",
+        status: {
+          checking: false,
+          checkedAt: Date.now(),
+          currentVersion: result.currentVersion,
+          latestVersion: result.latestVersion,
+          updateAvailable: result.updateAvailable,
+          error: null
+        }
+      });
+    } catch (err) {
+      store.dispatch({
+        type: "setUpdateStatus",
+        status: { checking: false, checkedAt: Date.now(), currentVersion: app.getVersion(), error: err.message }
+      });
+    }
+    return store.get().updateStatus;
+  });
+
+  ipcMain.handle("clipboard:write", (_e, text) => {
+    clipboard.writeText(String(text || ""));
   });
 }
 

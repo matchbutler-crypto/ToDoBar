@@ -25,6 +25,22 @@
     while (node.firstChild) node.removeChild(node.firstChild);
   };
 
+  /** Segmented Control: Buttons aus `names`, `current` hervorgehoben, `onPick(name)` bei Klick. */
+  function segButtons(host, names, current, onPick) {
+    clear(host);
+    names.forEach((name) => {
+      host.appendChild(h("button", { class: "seg" + (name === current ? " is-on" : ""), text: name, onClick: () => onPick(name) }));
+    });
+  }
+
+  /** Kategorie-Chips: dieselbe Logik wie segButtons, andere Optik. */
+  function chipButtons(host, names, current, onPick) {
+    clear(host);
+    names.forEach((name) => {
+      host.appendChild(h("button", { class: "chip" + (name === current ? " is-on" : ""), text: name, onClick: () => onPick(name) }));
+    });
+  }
+
   /**
    * Die Zeile "Kategorie · Priorität · Wiederholung · Unteraufgaben · Übertrag".
    * Im Popover steht der erste Mittelpunkt als eigenes Element — so ist es gesetzt.
@@ -53,10 +69,24 @@
     );
   }
 
+  function deleteButton(t, actions) {
+    return h("button", {
+      class: "delete-btn",
+      title: "Aufgabe löschen",
+      "aria-label": "Löschen: " + t.text,
+      onClick: (e) => {
+        e.stopPropagation();
+        actions.remove(t.id);
+      },
+      text: "×"
+    });
+  }
+
   /**
    * variant: "popover" | "plan" | "backlog"
    * Im Popover hängt der aufgeklappte Block unter der ganzen Zeile, im Fenster
-   * innerhalb der Textspalte — genau wie im Design.
+   * innerhalb der Textspalte — genau wie im Design. Der Löschen-Button sitzt in
+   * allen Varianten rechts und blendet erst beim Hover über die Zeile ein.
    */
   function taskRow(t, opts) {
     const variant = opts.variant;
@@ -90,18 +120,18 @@
       variant === "plan" ? details : null
     ]);
 
-    const head = h("div", { class: "task-head" }, [
-      check,
-      column,
+    const trailing = h("div", { class: "trailing" }, [
       variant === "backlog"
         ? h("button", { class: "to-today", text: "Heute", onClick: () => opts.actions.toToday(t.id) })
-        : t.isHigh
-          ? h("span", { class: "flag", title: "Hohe Priorität" })
-          : null
+        : null,
+      variant !== "backlog" && t.isHigh ? h("span", { class: "flag", title: "Hohe Priorität" }) : null,
+      deleteButton(t, opts.actions)
     ]);
+
+    const head = h("div", { class: "task-head" }, [check, column, trailing]);
 
     return h("div", { class: "task task-" + variant }, [head, variant === "popover" ? details : null]);
   }
 
-  root.UI = { h: h, clear: clear, taskRow: taskRow, metaLine: metaLine };
+  root.UI = { h: h, clear: clear, segButtons: segButtons, chipButtons: chipButtons, taskRow: taskRow, metaLine: metaLine };
 })(window);

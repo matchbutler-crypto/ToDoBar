@@ -16,12 +16,21 @@
     todayList: $("todayList"),
     backlogList: $("backlogList"),
     backlogDraft: $("backlogDraft"),
+    backlogOptions: $("backlogOptions"),
+    backlogChips: $("backlogChips"),
+    backlogPrios: $("backlogPrios"),
+    backlogRepeats: $("backlogRepeats"),
     archive: $("view-Archiv"),
     catCard: $("catCard"),
-    switchCard: $("switchCard")
+    switchCard: $("switchCard"),
+    updateCard: $("updateCard")
   };
 
-  const ui = { tab: "Planung", expanded: null };
+  const ui = {
+    tab: "Planung",
+    expanded: null,
+    backlog: { cat: null, prio: "Mittel", repeat: "Einmalig" }
+  };
   let state = null;
 
   const dispatch = (action) => window.todo.dispatch(action);
@@ -30,6 +39,7 @@
     toggle: (id) => dispatch({ type: "toggle", id: id }),
     toggleSub: (id, index) => dispatch({ type: "toggleSub", id: id, index: index }),
     toToday: (id) => dispatch({ type: "toToday", id: id }),
+    remove: (id) => dispatch({ type: "remove", id: id }),
     expand: (id) => {
       ui.expanded = ui.expanded === id ? null : id;
       render();
@@ -42,6 +52,12 @@
     ["showProgress", "Tagesfortschritt", "Balken und Zähler über der Tagesliste."]
   ];
 
+  /** Ein-Zeiler fürs Terminal: zieht den neuesten Stand, baut die App neu und startet sie neu. */
+  const UPDATE_COMMAND =
+    "cd ~/ToDoBar && git pull && cd app && npm install && npx electron-builder --mac --dir && " +
+    'APP=$(find dist -maxdepth 2 -name "Todo.app" | head -1) && cp -R "$APP" /Applications/ && ' +
+    "killall Todo 2>/dev/null; sleep 1; open -a Todo";
+
   function renderTabs(view) {
     UI.clear(els.tabs);
     Model.TABS.forEach((name) => {
@@ -51,6 +67,25 @@
           h("span", { class: "count", text: String(view.counts[name]) })
         ])
       );
+    });
+  }
+
+  /** Kategorie/Priorität/Wiederholung fürs Wochenfeld — erst sichtbar, sobald getippt wird. */
+  function renderBacklogComposer() {
+    const cats = state.settings.categories;
+    if (cats.indexOf(ui.backlog.cat) < 0) ui.backlog.cat = cats[0] || null;
+
+    UI.chipButtons(els.backlogChips, cats, ui.backlog.cat, (name) => {
+      ui.backlog.cat = name;
+      render();
+    });
+    UI.segButtons(els.backlogPrios, Model.PRIOS, ui.backlog.prio, (v) => {
+      ui.backlog.prio = v;
+      render();
+    });
+    UI.segButtons(els.backlogRepeats, Model.REPEATS, ui.backlog.repeat, (v) => {
+      ui.backlog.repeat = v;
+      render();
     });
   }
 
@@ -77,6 +112,8 @@
         els.backlogList.appendChild(UI.taskRow(t, { variant: "backlog", expandedId: null, actions: actions }))
       );
     }
+
+    renderBacklogComposer();
   }
 
   function renderArchive(view) {
@@ -101,7 +138,14 @@
                   onClick: () => actions.toggle(t.id)
                 }),
                 h("span", { class: "archive-text", text: t.text }),
-                h("span", { class: "archive-cat", text: t.cat })
+                h("span", { class: "archive-cat", text: t.cat }),
+                h("button", {
+                  class: "delete-btn",
+                  title: "Endgültig löschen",
+                  "aria-label": "Löschen: " + t.text,
+                  onClick: () => actions.remove(t.id),
+                  text: "×"
+                })
               ])
             )
           )
@@ -162,6 +206,72 @@
         ])
       );
     });
+
+    renderUpdateCard();
+  }
+
+  /** Prüft nur die Versionsnummer im Repo und zeigt sie an — kein Auto-Install. */
+  function renderUpdateCard() {
+    const status = state.updateStatus || {};
+    UI.clear(els.updateCard);
+
+    els.updateCard.appendChild(
+      h("div", { class: "row" }, [
+        h("span", { class: "cat-name", text: "Version " + (state.appVersion || "?") }),
+        h("span", { class: "cat-right" }, [
+          h("button", {
+            class: "cat-remove",
+            text: status.checking ? "Prüfe …" : "Nach Updates suchen",
+            disabled: status.checking ? "" : null,
+            onClick: () => {
+              if (!status.checking) window.todo.checkForUpdate();
+            }
+          })
+        ])
+      ])
+    );
+
+    let statusText = "Noch nicht geprüft.";
+    if (status.checking) statusText = "Prüfe auf GitHub …";
+    else if (status.error) statusText = "Fehler: " + status.error;
+    else if (status.checkedAt) {
+      const time = new Date(status.checkedAt).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
+      statusText = status.updateAvailable
+        ? "Update verfügbar: Version " + status.latestVersion + " (geprüft um " + time + ")"
+        : "Du hast die aktuelle Version. (geprüft um " + time + ")";
+    }
+
+    const statusChildren = [h("span", { class: "hint", text: statusText })];
+    if (status.updateAvailable && !status.checking) {
+      statusChildren.push(
+        h("button", {
+          class: "cat-remove",
+          text: "Befehl kopieren",
+          onClick: () => window.todo.copyToClipboard(UPDATE_COMMAND)
+        })
+      );
+    }
+    els.updateCard.appendChild(h("div", { class: "row update-status" }, statusChildren));
+
+    const tokenInput = h("input", {
+      type: "password",
+      placeholder: "GitHub-Zugriffstoken (nur bei privatem Repo nötig)",
+      value: state.settings.updateToken || "",
+      onKeydown: (e) => {
+        if (e.key !== "Enter") return;
+        dispatch({ type: "setUpdateToken", token: e.target.value });
+        e.target.blur();
+      }
+    });
+    els.updateCard.appendChild(
+      h("div", { class: "row update-token" }, [
+        tokenInput,
+        h("span", {
+          class: "hint",
+          text: "Bleibt nur lokal auf diesem Mac, in derselben Datei wie deine Aufgaben. Enter zum Speichern."
+        })
+      ])
+    );
   }
 
   function setTab(name) {
@@ -196,7 +306,18 @@
     const text = e.target.value.trim();
     if (!text) return;
     e.target.value = "";
-    dispatch({ type: "add", text: text, bucket: "Woche", prio: "Mittel", repeat: "Einmalig" });
+    els.backlogOptions.hidden = true;
+    dispatch({
+      type: "add",
+      text: text,
+      bucket: "Woche",
+      cat: ui.backlog.cat,
+      prio: ui.backlog.prio,
+      repeat: ui.backlog.repeat
+    });
+  });
+  els.backlogDraft.addEventListener("input", () => {
+    els.backlogOptions.hidden = !els.backlogDraft.value.trim();
   });
 
   window.todo.onState((next) => {

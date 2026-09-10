@@ -44,8 +44,9 @@ class Store {
     return state;
   }
 
+  /** Zustand plus laufzeitbezogene Zusatzfelder — appVersion wird nie mitgespeichert. */
   get() {
-    return this.state;
+    return Object.assign({}, this.state, { appVersion: app.getVersion() });
   }
 
   subscribe(fn) {

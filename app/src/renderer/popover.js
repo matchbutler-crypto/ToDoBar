@@ -8,6 +8,7 @@
   const els = {
     panel: document.querySelector(".panel"),
     draft: $("draft"),
+    composerOptions: $("composerOptions"),
     chips: $("chips"),
     prios: $("prios"),
     buckets: $("buckets"),
@@ -28,26 +29,16 @@
   const actions = {
     toggle: (id) => window.todo.dispatch({ type: "toggle", id: id }),
     toggleSub: (id, index) => window.todo.dispatch({ type: "toggleSub", id: id, index: index }),
+    remove: (id) => window.todo.dispatch({ type: "remove", id: id }),
     expand: (id) => {
       ui.expanded = ui.expanded === id ? null : id;
       render();
     }
   };
 
-  function segButtons(host, names, current, pick) {
-    UI.clear(host);
-    names.forEach((name) => {
-      host.appendChild(
-        h("button", {
-          class: "seg" + (name === current ? " is-on" : ""),
-          text: name,
-          onClick: () => {
-            pick(name);
-            render();
-          }
-        })
-      );
-    });
+  /** Kategorie/Priorität/Wiederholung erst zeigen, sobald etwas eingetippt ist. */
+  function updateComposerVisibility() {
+    els.composerOptions.hidden = !els.draft.value.trim();
   }
 
   function submit() {
@@ -62,7 +53,9 @@
       repeat: ui.repeat
     });
     els.draft.value = "";
+    updateComposerVisibility();
     els.draft.focus();
+    reportHeight();
   }
 
   function render() {
@@ -71,23 +64,22 @@
     if (cats.indexOf(ui.cat) < 0) ui.cat = cats[0] || null;
     const view = Model.derive(state);
 
-    UI.clear(els.chips);
-    cats.forEach((name) => {
-      els.chips.appendChild(
-        h("button", {
-          class: "chip" + (name === ui.cat ? " is-on" : ""),
-          text: name,
-          onClick: () => {
-            ui.cat = name;
-            render();
-          }
-        })
-      );
+    UI.chipButtons(els.chips, cats, ui.cat, (name) => {
+      ui.cat = name;
+      render();
     });
-
-    segButtons(els.prios, Model.PRIOS, ui.prio, (v) => (ui.prio = v));
-    segButtons(els.buckets, Model.BUCKETS, ui.bucket, (v) => (ui.bucket = v));
-    segButtons(els.repeats, Model.REPEATS, ui.repeat, (v) => (ui.repeat = v));
+    UI.segButtons(els.prios, Model.PRIOS, ui.prio, (v) => {
+      ui.prio = v;
+      render();
+    });
+    UI.segButtons(els.buckets, Model.BUCKETS, ui.bucket, (v) => {
+      ui.bucket = v;
+      render();
+    });
+    UI.segButtons(els.repeats, Model.REPEATS, ui.repeat, (v) => {
+      ui.repeat = v;
+      render();
+    });
 
     els.progressLabel.textContent = view.progressLabel;
     els.progress.hidden = !state.settings.showProgress;
@@ -115,6 +107,10 @@
 
   els.draft.addEventListener("keydown", (e) => {
     if (e.key === "Enter") submit();
+  });
+  els.draft.addEventListener("input", () => {
+    updateComposerVisibility();
+    reportHeight();
   });
   els.add.addEventListener("click", submit);
   els.openWindow.addEventListener("click", () => window.todo.openWindow("Planung"));

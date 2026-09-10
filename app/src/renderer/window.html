@@ -41,6 +41,13 @@
             <span class="bullet"></span>
             <input id="backlogDraft" type="text" placeholder="Zur Woche hinzufügen" autocomplete="off" spellcheck="false">
           </div>
+          <div class="composer-options week-options" id="backlogOptions" hidden>
+            <div class="chips" id="backlogChips"></div>
+            <div class="controls">
+              <div class="segmented" id="backlogPrios"></div>
+              <div class="segmented" id="backlogRepeats"></div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -62,6 +69,11 @@
         <div class="shortcut">
           <span style="font-size:14px">Kurzbefehl für das Popover</span>
           <span class="keycap">⌥ Leertaste</span>
+        </div>
+
+        <div class="group">
+          <span class="section-label">Software</span>
+          <div class="card" id="updateCard"></div>
         </div>
       </section>
     </main>

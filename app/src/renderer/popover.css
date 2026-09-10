@@ -26,13 +26,6 @@ body {
   gap: 12px;
   border-bottom: 1px solid var(--line);
 }
-.controls {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  flex-wrap: wrap;
-}
 .add {
   border: none;
   border-radius: 8px;

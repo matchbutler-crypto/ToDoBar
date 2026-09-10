@@ -24,7 +24,16 @@
         categories: DEFAULT_CATS.slice(),
         markCarried: true,
         autoRollover: true,
-        showProgress: true
+        showProgress: true,
+        updateToken: ""
+      },
+      updateStatus: {
+        checking: false,
+        checkedAt: null,
+        currentVersion: null,
+        latestVersion: null,
+        updateAvailable: false,
+        error: null
       },
       tasks: []
     };
@@ -167,6 +176,14 @@
 
       case "remove":
         s.tasks = s.tasks.filter((t) => t.id !== action.id);
+        return s;
+
+      case "setUpdateToken":
+        s.settings.updateToken = String(action.token || "").trim();
+        return s;
+
+      case "setUpdateStatus":
+        s.updateStatus = Object.assign({}, state.updateStatus, action.status || {});
         return s;
 
       case "addCategory": {

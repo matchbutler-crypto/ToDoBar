@@ -33,6 +33,24 @@ app.whenReady().then(async () => {
   ipcMain.on("popover:resize", () => {});
   ipcMain.on("popover:hide", () => {});
   ipcMain.on("window:open", () => {});
+  ipcMain.handle("clipboard:write", () => {});
+  // Fingiert einen erfolgreichen Update-Check, ohne echtes Netzwerk anzufassen —
+  // die main/index.js-Variante mit echtem GitHub-Aufruf ist separat in update.js getestet.
+  ipcMain.handle("update:check", async () => {
+    store.dispatch({ type: "setUpdateStatus", status: { checking: true, error: null } });
+    await wait(20);
+    store.dispatch({
+      type: "setUpdateStatus",
+      status: {
+        checking: false,
+        checkedAt: Date.now(),
+        currentVersion: "1.1.0",
+        latestVersion: "1.2.0",
+        updateAvailable: true,
+        error: null
+      }
+    });
+  });
   store.subscribe((state) => wins.forEach((w) => w.webContents.send("state:changed", state)));
 
   const webPreferences = {
@@ -81,6 +99,15 @@ app.whenReady().then(async () => {
         "field.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' })); return true;"
     );
 
+  /** Tippt ohne Enter — löst nur das 'input'-Event aus (für den Composer-Collapse). */
+  const typeOnly = (target, selector, value) =>
+    js(
+      target,
+      "const field = document.querySelector(" + JSON.stringify(selector) + ");" +
+        "field.value = " + JSON.stringify(value) + ";" +
+        "field.dispatchEvent(new Event('input')); return true;"
+    );
+
   try {
     console.log("Popover");
 
@@ -94,12 +121,25 @@ app.whenReady().then(async () => {
       assert.strictEqual(await val(popover, "document.getElementById('openCount').textContent"), "4 offen");
     });
 
+    await check("Kategorie/Priorität sind erst nach Texteingabe sichtbar", async () => {
+      assert.strictEqual(await val(popover, "document.getElementById('composerOptions').hidden"), true);
+      await typeOnly(popover, "#draft", "Vorschau");
+      await wait(80);
+      assert.strictEqual(await val(popover, "document.getElementById('composerOptions').hidden"), false);
+      await typeOnly(popover, "#draft", "");
+      await wait(80);
+      assert.strictEqual(await val(popover, "document.getElementById('composerOptions').hidden"), true);
+      await typeOnly(popover, "#draft", "Testaufgabe");
+      await wait(80);
+    });
+
     await check("Kategorie und Priorität lassen sich wählen", async () => {
       await clickByText(popover, ".chip", "Privat");
       await clickByText(popover, "#prios .seg", "Hoch");
       await wait(120);
       assert.strictEqual(await val(popover, "document.querySelector('.chip.is-on').textContent"), "Privat");
       assert.strictEqual(await val(popover, "document.querySelector('#prios .seg.is-on').textContent"), "Hoch");
+      assert.strictEqual(await val(popover, "document.getElementById('draft').value"), "Testaufgabe", "Auswahl klickt, ohne den Entwurf zu leeren");
     });
 
     await check("Eintrag über die Eingabetaste landet im Store", async () => {
@@ -110,6 +150,7 @@ app.whenReady().then(async () => {
       assert.strictEqual(added.cat, "Privat");
       assert.strictEqual(added.prio, "Hoch");
       assert.strictEqual(await val(popover, "document.getElementById('draft').value"), "");
+      assert.strictEqual(await val(popover, "document.getElementById('composerOptions').hidden"), true, "klappt nach dem Absenden wieder zu");
       assert.strictEqual(await val(popover, "document.getElementById('openCount').textContent"), "5 offen");
     });
 
@@ -126,6 +167,14 @@ app.whenReady().then(async () => {
       await wait(150);
       assert.strictEqual(await val(popover, "document.querySelectorAll('.task-popover .details .sub').length"), 2);
       assert.ok((await val(popover, "document.querySelector('.details .note').textContent")).indexOf("34 Frames") > 0);
+    });
+
+    await check("Löschen entfernt die Aufgabe aus Popover und Store", async () => {
+      const before = store.get().tasks.length;
+      await clickInRow(popover, ".task-popover", "Zahnarzt anrufen", ".delete-btn");
+      await wait(200);
+      assert.strictEqual(store.get().tasks.length, before - 1);
+      assert.ok(!store.get().tasks.some((t) => t.text === "Zahnarzt anrufen"));
     });
 
     console.log("Fenster");
@@ -156,16 +205,45 @@ app.whenReady().then(async () => {
       assert.strictEqual(await val(popover, "document.getElementById('progress').hidden"), true);
     });
 
-    await check("Wochenliste: Eintrag hinzufügen und nach heute holen", async () => {
+    await check("Wochenfeld: Optionen erst nach Texteingabe sichtbar", async () => {
       await clickByText(win, ".tab", "Planung");
       await wait(150);
+      assert.strictEqual(await val(win, "document.getElementById('backlogOptions').hidden"), true);
+      await typeOnly(win, "#backlogDraft", "Vorschau");
+      await wait(80);
+      assert.strictEqual(await val(win, "document.getElementById('backlogOptions').hidden"), false);
+      await typeOnly(win, "#backlogDraft", "");
+      await wait(80);
+      assert.strictEqual(await val(win, "document.getElementById('backlogOptions').hidden"), true);
+    });
+
+    await check("Wochenliste: Kategorie/Priorität wählen, hinzufügen, nach heute holen", async () => {
+      await typeOnly(win, "#backlogDraft", "Wocheneintrag");
+      await wait(80);
+      await clickByText(win, "#backlogChips .chip", "Admin");
+      await clickByText(win, "#backlogPrios .seg", "Hoch");
+      await wait(100);
       await typeAndEnter(win, "#backlogDraft", "Wocheneintrag");
       await wait(200);
       const task = store.get().tasks.find((t) => t.text === "Wocheneintrag");
+      assert.ok(task, "Aufgabe im Store");
       assert.strictEqual(task.bucket, "Woche");
+      assert.strictEqual(task.cat, "Admin");
+      assert.strictEqual(task.prio, "Hoch");
+      assert.strictEqual(await val(win, "document.getElementById('backlogOptions').hidden"), true, "klappt nach dem Absenden wieder zu");
+
       await clickInRow(win, ".task-backlog", "Wocheneintrag", ".to-today");
       await wait(200);
       assert.strictEqual(store.get().tasks.find((t) => t.id === task.id).bucket, "Heute");
+    });
+
+    await check("Wochenliste: Aufgabe löschen", async () => {
+      await typeAndEnter(win, "#backlogDraft", "Löschmich");
+      await wait(200);
+      const before = store.get().tasks.length;
+      await clickInRow(win, ".task-backlog", "Löschmich", ".delete-btn");
+      await wait(200);
+      assert.strictEqual(store.get().tasks.length, before - 1);
     });
 
     await check("Archiv: erledigte Aufgabe wieder öffnen", async () => {
@@ -175,6 +253,33 @@ app.whenReady().then(async () => {
       await js(win, "document.querySelector('.archive-dot').click(); return true;");
       await wait(200);
       assert.strictEqual(store.get().tasks.filter((t) => t.done).length, before - 1);
+    });
+
+    await check("Archiv: Eintrag endgültig löschen", async () => {
+      await wait(100);
+      const before = store.get().tasks.length;
+      await js(win, "document.querySelector('.archive .delete-btn').click(); return true;");
+      await wait(200);
+      assert.strictEqual(store.get().tasks.length, before - 1);
+    });
+
+    await check("Einstellungen: Update-Karte prüft und zeigt Ergebnis", async () => {
+      await clickByText(win, ".tab", "Einstellungen");
+      await wait(150);
+      assert.ok((await val(win, "document.getElementById('updateCard').textContent")).indexOf("Version") >= 0);
+      await js(
+        win,
+        "[...document.querySelectorAll('#updateCard button')].find(b => b.textContent.indexOf('Nach Updates') === 0).click(); return true;"
+      );
+      await wait(150);
+      assert.strictEqual(store.get().updateStatus.updateAvailable, true);
+      assert.ok((await val(win, "document.getElementById('updateCard').textContent")).indexOf("Update verfügbar") >= 0);
+    });
+
+    await check("Einstellungen: Zugriffstoken wird gespeichert", async () => {
+      await typeAndEnter(win, ".update-token input", "ghp_test123");
+      await wait(150);
+      assert.strictEqual(store.get().settings.updateToken, "ghp_test123");
     });
 
     console.log("Speichern");

@@ -22,5 +22,7 @@ contextBridge.exposeInMainWorld("todo", {
   },
   hidePopover: () => ipcRenderer.send("popover:hide"),
   resizePopover: (height) => ipcRenderer.send("popover:resize", height),
-  openWindow: (tab) => ipcRenderer.send("window:open", tab)
+  openWindow: (tab) => ipcRenderer.send("window:open", tab),
+  checkForUpdate: () => ipcRenderer.invoke("update:check"),
+  copyToClipboard: (text) => ipcRenderer.invoke("clipboard:write", text)
 });

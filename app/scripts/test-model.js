@@ -5,6 +5,7 @@
 const assert = require("assert");
 const Model = require("../src/shared/model.js");
 const Dates = require("../src/shared/dates.js");
+const Update = require("../src/main/update.js");
 
 const today = Dates.todayKey();
 const yesterday = Dates.addDays(today, -1);
@@ -130,6 +131,12 @@ test("aus der Woche nach heute holen", () => {
   assert.strictEqual(next.tasks[0].day, today);
 });
 
+test("Aufgabe löschen entfernt genau diesen Eintrag", () => {
+  const state = withTasks([{ text: "bleibt" }, { text: "weg" }]);
+  const next = Model.reduce(state, { type: "remove", id: 2 });
+  assert.deepStrictEqual(next.tasks.map((t) => t.text), ["bleibt"]);
+});
+
 console.log("Kategorien und Schalter");
 
 test("Kategorie anlegen und entfernen, Duplikate werden ignoriert", () => {
@@ -183,6 +190,29 @@ test("Übertrag ausblenden lässt den Zähler unangetastet", () => {
   const view = Model.derive(state, today);
   assert.strictEqual(view.today[0].showCarried, false);
   assert.strictEqual(view.today[0].carriedDays, 2);
+});
+
+console.log("Update-Check");
+
+test("Versionsvergleich erkennt neuer/gleich/älter", () => {
+  assert.ok(Update.compareVersions("1.2.0", "1.1.9") > 0);
+  assert.strictEqual(Update.compareVersions("1.2.0", "1.2.0"), 0);
+  assert.ok(Update.compareVersions("1.1.0", "1.2.0") < 0);
+  assert.ok(Update.compareVersions("1.2", "1.2.0") === 0, "fehlende Nachkommastellen zählen als 0");
+});
+
+test("Zustand für Einstellungen enthält Token und Update-Status", () => {
+  const s = Model.defaultState();
+  assert.strictEqual(s.settings.updateToken, "");
+  assert.strictEqual(s.updateStatus.updateAvailable, false);
+  const withToken = Model.reduce(s, { type: "setUpdateToken", token: "  ghp_abc  " });
+  assert.strictEqual(withToken.settings.updateToken, "ghp_abc");
+  const withStatus = Model.reduce(s, {
+    type: "setUpdateStatus",
+    status: { checking: false, updateAvailable: true, latestVersion: "1.2.0" }
+  });
+  assert.strictEqual(withStatus.updateStatus.updateAvailable, true);
+  assert.strictEqual(withStatus.updateStatus.latestVersion, "1.2.0");
 });
 
 console.log("\n" + passed + " Prüfungen bestanden.");

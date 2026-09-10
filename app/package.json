@@ -1,7 +1,7 @@
 {
   "name": "cesa-todo",
   "productName": "Todo",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Menübar-Todo für macOS — schneller Eintrag aus der Menübar, Fenster für Planung, Archiv und Einstellungen.",
   "main": "src/main/index.js",
   "private": true,

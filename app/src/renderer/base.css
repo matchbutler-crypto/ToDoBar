@@ -129,6 +129,26 @@ button:focus-visible {
   border-color: var(--ink);
 }
 
+/* ------------------------------------------------------- Neue-Aufgabe-Optionen */
+
+/* Kategorie/Priorität/Wiederholung erscheinen erst, sobald Text im Feld steht —
+   [hidden] muss hier explizit gegen das eigene display:flex durchgesetzt werden. */
+.composer-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.composer-options[hidden] {
+  display: none;
+}
+.controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 /* --------------------------------------------------- Segmented Controls */
 
 .segmented {
@@ -250,6 +270,38 @@ button:focus-visible {
   align-items: flex-start;
 }
 
+/* Rechter Zeilenbereich: "Heute"-Knopf, Prio-Punkt, Löschen — je nach Variante. */
+.trailing {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  flex: none;
+}
+.delete-btn {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--muted-2);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  opacity: 0;
+  transition: opacity 0.12s ease, background 0.12s ease, color 0.12s ease;
+}
+.delete-btn:hover {
+  background: rgba(92, 42, 42, 0.12);
+  color: var(--oxblood);
+}
+.task-popover:hover .delete-btn,
+.task-plan:hover .delete-btn,
+.task-backlog:hover .delete-btn,
+.card > .row:hover .delete-btn {
+  opacity: 1;
+}
+
 /* Popover-Variante */
 .task-popover {
   padding: 9px 8px;
@@ -265,6 +317,9 @@ button:focus-visible {
 }
 .task-popover .flag {
   margin-top: 6px;
+}
+.task-popover .delete-btn {
+  margin-top: 2px;
 }
 .task-popover > .details {
   padding: 9px 0 3px 27px;
@@ -288,6 +343,9 @@ button:focus-visible {
 }
 .task-plan .flag {
   margin-top: 7px;
+}
+.task-plan .delete-btn {
+  margin-top: 3px;
 }
 .task-plan .details {
   padding: 8px 0 2px;
@@ -324,6 +382,9 @@ button:focus-visible {
 }
 .to-today:hover {
   border-color: var(--muted-2);
+}
+.task-backlog .delete-btn {
+  margin-top: 5px;
 }
 
 /* ----------------------------------------------------------- Fortschritt */
