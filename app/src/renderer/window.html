@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self' 'unsafe-inline'; font-src 'self'; script-src 'self'">
+<title>Todo</title>
+<link rel="stylesheet" href="base.css">
+<link rel="stylesheet" href="window.css">
+</head>
+<body>
+  <div class="shell">
+
+    <aside class="sidebar">
+      <div class="lights"></div>
+      <nav class="tabs" id="tabs"></nav>
+    </aside>
+
+    <main class="content">
+      <header class="toolbar">
+        <span class="toolbar-title" id="tabTitle"></span>
+        <span class="num sub" id="toolbarMeta"></span>
+      </header>
+
+      <!-- PLANUNG -->
+      <section class="plan" id="view-Planung" hidden>
+        <div class="col col-today">
+          <div class="col-head">
+            <span class="col-title">Heute</span>
+            <span class="num sub" id="todayMeta"></span>
+          </div>
+          <div class="progress" id="progress"><i></i></div>
+          <div class="rows" id="todayList"></div>
+        </div>
+        <div class="col col-week">
+          <div class="col-head">
+            <span class="col-title">Diese Woche</span>
+            <span class="num sub" id="weekMeta"></span>
+          </div>
+          <div class="rows" id="backlogList"></div>
+          <div class="field week-field">
+            <span class="bullet"></span>
+            <input id="backlogDraft" type="text" placeholder="Zur Woche hinzufügen" autocomplete="off" spellcheck="false">
+          </div>
+        </div>
+      </section>
+
+      <!-- ARCHIV -->
+      <section class="archive" id="view-Archiv" hidden></section>
+
+      <!-- EINSTELLUNGEN -->
+      <section class="settings" id="view-Einstellungen" hidden>
+        <div class="group">
+          <span class="section-label">Kategorien</span>
+          <div class="card" id="catCard"></div>
+        </div>
+
+        <div class="group">
+          <span class="section-label">Verhalten</span>
+          <div class="card" id="switchCard"></div>
+        </div>
+
+        <div class="shortcut">
+          <span style="font-size:14px">Kurzbefehl für das Popover</span>
+          <span class="keycap">⌥ Leertaste</span>
+        </div>
+      </section>
+    </main>
+
+  </div>
+
+<script src="../shared/dates.js"></script>
+<script src="../shared/model.js"></script>
+<script src="dom.js"></script>
+<script src="window.js"></script>
+</body>
+</html>

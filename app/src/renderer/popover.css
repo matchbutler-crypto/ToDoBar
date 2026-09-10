@@ -1,0 +1,120 @@
+/* Menübar-Popover: 400px Panel, freischwebend mit Schlagschatten.
+   Das Fenster selbst ist transparent, der Rand ringsum trägt den Schatten. */
+
+body {
+  background: transparent;
+  padding: 8px 24px 56px;
+}
+
+.panel {
+  width: 400px;
+  background: var(--paper);
+  border: 0.5px solid var(--edge-strong);
+  border-radius: 12px;
+  box-shadow: 0 24px 60px rgba(20, 18, 16, 0.38);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ------------------------------------------------------------ Eingabeteil */
+
+.composer {
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-bottom: 1px solid var(--line);
+}
+.controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.add {
+  border: none;
+  border-radius: 8px;
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 13px;
+  padding: 8px 16px;
+  cursor: pointer;
+}
+.add:hover {
+  background: var(--ink-hover);
+}
+
+/* ---------------------------------------------------------------- "Heute" */
+
+.today-head {
+  padding: 14px 16px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.today-head .line {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+.today-head .title {
+  font-size: 15px;
+  font-weight: 700;
+}
+.muted {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* ------------------------------------------------------------------ Liste */
+
+.list {
+  display: flex;
+  flex-direction: column;
+  max-height: 352px;
+  overflow: auto;
+  padding: 0 8px 8px;
+}
+.list::-webkit-scrollbar {
+  width: 8px;
+}
+.list::-webkit-scrollbar-thumb {
+  background: var(--edge);
+  border-radius: 4px;
+  border: 2px solid var(--paper);
+}
+.list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ------------------------------------------------------------------ Fußzeile */
+
+.footer {
+  padding: 10px 16px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  color: var(--muted);
+}
+.footer .keys {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+.link {
+  border: none;
+  background: transparent;
+  padding: 0;
+  font-size: 11px;
+  color: var(--muted);
+  cursor: pointer;
+}
+.link:hover {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}

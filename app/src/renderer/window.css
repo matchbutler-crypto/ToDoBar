@@ -1,0 +1,266 @@
+/* Hauptfenster: Seitenleiste + Inhalt.
+   Rahmen, Radius und Schatten kommen unter macOS vom Fenster selbst. */
+
+html,
+body,
+.shell {
+  height: 100%;
+}
+body {
+  background: var(--paper);
+  overflow: hidden;
+}
+.shell {
+  display: flex;
+  min-width: 0;
+}
+
+/* ------------------------------------------------------------ Seitenleiste */
+
+.sidebar {
+  background: var(--sand);
+  border-right: 1px solid var(--line-soft);
+  display: flex;
+  flex-direction: column;
+  flex: none;
+  width: 216px;
+}
+/* Platz für die echten Fensterknöpfe (trafficLightPosition 16/20) — zugleich Ziehfläche. */
+.lights {
+  height: 52px;
+  flex: none;
+  -webkit-app-region: drag;
+}
+.tabs {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px;
+}
+.tab {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  font-size: 13px;
+  padding: 7px 10px;
+  border-radius: 7px;
+  border: none;
+  cursor: pointer;
+  background: transparent;
+  color: var(--text-sidebar);
+}
+.tab:hover {
+  background: rgba(26, 24, 22, 0.05);
+}
+.tab.is-on,
+.tab.is-on:hover {
+  background: var(--ink);
+  color: var(--paper);
+}
+.tab .count {
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted-2);
+}
+
+/* ----------------------------------------------------------------- Inhalt */
+
+.content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+.toolbar {
+  height: 52px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 22px;
+  border-bottom: 1px solid var(--line);
+  -webkit-app-region: drag;
+}
+.toolbar-title {
+  font-size: 15px;
+  font-weight: 700;
+}
+.sub {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* ---------------------------------------------------------------- Planung */
+
+.plan {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  flex: 1;
+  min-height: 0;
+}
+.plan[hidden],
+.archive[hidden],
+.settings[hidden] {
+  display: none;
+}
+.col {
+  display: flex;
+  flex-direction: column;
+  padding: 18px 14px;
+  gap: 10px;
+  min-width: 0;
+  overflow: auto;
+}
+.col-today {
+  border-right: 1px solid var(--line);
+}
+.col-week {
+  background: var(--paper-2);
+}
+.col-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 8px;
+  flex: none;
+}
+.col-title {
+  font-size: 20px;
+  font-weight: 700;
+}
+.col > .progress {
+  margin: 0 8px;
+  flex: none;
+}
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.week-field {
+  margin: 6px 8px 0;
+  flex: none;
+}
+
+/* ----------------------------------------------------------------- Archiv */
+
+.archive {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 18px 22px;
+  gap: 22px;
+  overflow: auto;
+}
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: none;
+}
+.archive-dot {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: var(--muted-2);
+  display: block;
+  flex: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+.archive-dot:hover {
+  background: var(--muted);
+}
+.archive-text {
+  font-size: 14px;
+  color: var(--muted);
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+  text-wrap: pretty;
+}
+.archive-cat {
+  font-size: 11px;
+  color: var(--muted-2);
+  margin-left: auto;
+  flex: none;
+}
+
+/* ---------------------------------------------------------- Einstellungen */
+
+.settings {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+  padding: 20px 22px;
+  overflow: auto;
+}
+.cat-name {
+  font-size: 14px;
+}
+.cat-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: none;
+}
+.cat-count {
+  font-size: 11px;
+  color: var(--muted-2);
+  font-variant-numeric: tabular-nums;
+}
+.cat-remove {
+  border: none;
+  background: transparent;
+  font-size: 12px;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 0;
+}
+.cat-remove:hover {
+  color: var(--oxblood);
+}
+.cat-new {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 14px;
+}
+.cat-new input {
+  width: 100%;
+  border: none;
+  background: transparent;
+  font-size: 14px;
+  padding: 0;
+  user-select: text;
+}
+.switch-row {
+  align-items: center;
+}
+.switch-label {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.switch-label > span:first-child {
+  font-size: 14px;
+}
+.shortcut {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: var(--paper-2);
+  border: 0.5px solid var(--line-soft);
+  border-radius: 10px;
+  padding: 14px;
+  flex: none;
+}

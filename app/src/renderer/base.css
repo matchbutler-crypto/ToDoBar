@@ -1,0 +1,422 @@
+/* ------------------------------------------------------------------
+   Gemeinsame Grundlage für Popover und Fenster.
+   Farben und Maße sind 1:1 aus dem Design "Todo Menubar v3 Apple".
+   ------------------------------------------------------------------ */
+
+@font-face {
+  font-family: "CesaHelvetica";
+  src: url("fonts/Helvetica.ttf") format("truetype");
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "CesaHelvetica";
+  src: url("fonts/Helvetica-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-display: swap;
+}
+
+:root {
+  --ink: #1a1816;
+  --ink-hover: #2e2b27;
+  --paper: #f7f3ec;
+  --paper-2: #f2ede4;
+  --sand: #ede7dd;
+  --sand-2: #e7e1d6;
+  --line: #e7e1d6;
+  --line-soft: #e2dcd1;
+  --edge: #ddd7cc;
+  --edge-strong: #c9c2b6;
+  --muted: #8a8378;
+  --muted-2: #b8b2a7;
+  --text-2: #5f5a52;
+  --text-3: #7a746b;
+  --text-sidebar: #3a362f;
+  --oxblood: #5c2a2a;
+  --hover: #efeae0;
+  --hover-2: #eae4d9;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: "CesaHelvetica", Helvetica, Arial, sans-serif;
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  cursor: default;
+  user-select: none;
+}
+
+input,
+button {
+  font-family: inherit;
+  color: inherit;
+}
+input:focus,
+button:focus {
+  outline: none;
+}
+/* Für Tastaturbedienung bleibt ein dezenter Fokusring — mit der Maus unsichtbar.
+   Textfelder bekommen keinen: sie zeigen ohnehin einen Cursor, und das Popover
+   setzt den Fokus beim Öffnen selbst dorthin. */
+button:focus-visible {
+  outline: 1.5px solid var(--ink);
+  outline-offset: 2px;
+}
+::placeholder {
+  color: var(--muted-2);
+}
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ----------------------------------------------------------- Eingabefeld */
+
+.field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--sand);
+  border: 0.5px solid var(--edge);
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+.field > .bullet {
+  width: 14px;
+  height: 14px;
+  border: 1.5px solid var(--muted-2);
+  border-radius: 50%;
+  display: block;
+  flex: none;
+}
+.field > input {
+  border: none;
+  background: transparent;
+  font-size: 14px;
+  width: 100%;
+  padding: 0;
+  user-select: text;
+}
+
+/* ---------------------------------------------------------------- Chips */
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.chip {
+  font-size: 12px;
+  padding: 5px 11px;
+  border-radius: 7px;
+  cursor: pointer;
+  white-space: nowrap;
+  background: var(--paper);
+  color: var(--text-2);
+  border: 0.5px solid var(--edge);
+}
+.chip.is-on {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+}
+
+/* --------------------------------------------------- Segmented Controls */
+
+.segmented {
+  display: flex;
+  padding: 2px;
+  background: var(--sand-2);
+  border-radius: 8px;
+  gap: 2px;
+}
+.seg {
+  font-size: 12px;
+  padding: 5px 11px;
+  border-radius: 6px;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: var(--text-3);
+  white-space: nowrap;
+}
+.seg.is-on {
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 0 1px 2px rgba(20, 18, 16, 0.14);
+}
+
+/* ------------------------------------------------------------- Aufgaben */
+
+.check {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1.5px solid var(--muted-2);
+  background: transparent;
+  flex: none;
+  margin-top: 1px;
+  cursor: pointer;
+  padding: 0;
+}
+.check.is-done {
+  background: var(--ink);
+  border-color: var(--ink);
+}
+.check.sm {
+  width: 15px;
+  height: 15px;
+}
+
+.task-text {
+  font-size: 14px;
+  line-height: 1.4;
+  text-wrap: pretty;
+  color: var(--ink);
+}
+.task-text.lg {
+  font-size: 15px;
+}
+.task-text.sm {
+  font-size: 13px;
+}
+.task-text.is-done {
+  color: var(--muted-2);
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+}
+.task-text.can-expand {
+  cursor: pointer;
+}
+
+.meta {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  font-size: 11px;
+  color: var(--muted);
+}
+.meta .carried {
+  color: var(--oxblood);
+}
+
+.flag {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ink);
+  display: block;
+  flex: none;
+}
+
+.note {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-2);
+  text-wrap: pretty;
+}
+
+/* ------------------------------------------------- Aufgabenzeile: Layout */
+
+.task {
+  border-radius: 8px;
+}
+.task-head {
+  display: flex;
+  align-items: flex-start;
+}
+.task-col {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+.details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.sub {
+  display: flex;
+  align-items: flex-start;
+}
+
+/* Popover-Variante */
+.task-popover {
+  padding: 9px 8px;
+}
+.task-popover:hover {
+  background: var(--hover);
+}
+.task-popover .task-head {
+  gap: 11px;
+}
+.task-popover .task-col {
+  gap: 3px;
+}
+.task-popover .flag {
+  margin-top: 6px;
+}
+.task-popover > .details {
+  padding: 9px 0 3px 27px;
+}
+.task-popover .sub {
+  gap: 9px;
+}
+
+/* Planungs-Variante im Fenster */
+.task-plan {
+  padding: 10px 8px;
+}
+.task-plan:hover {
+  background: var(--hover);
+}
+.task-plan .task-head {
+  gap: 12px;
+}
+.task-plan .task-col {
+  gap: 4px;
+}
+.task-plan .flag {
+  margin-top: 7px;
+}
+.task-plan .details {
+  padding: 8px 0 2px;
+}
+.task-plan .sub {
+  gap: 10px;
+}
+.task-plan .note {
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+/* Wochen-Backlog */
+.task-backlog {
+  padding: 10px 8px;
+}
+.task-backlog:hover {
+  background: var(--hover-2);
+}
+.task-backlog .task-head {
+  gap: 12px;
+}
+.task-backlog .task-col {
+  gap: 4px;
+}
+.to-today {
+  border: 0.5px solid var(--edge);
+  border-radius: 6px;
+  background: var(--paper);
+  font-size: 11px;
+  padding: 5px 10px;
+  cursor: pointer;
+  flex: none;
+}
+.to-today:hover {
+  border-color: var(--muted-2);
+}
+
+/* ----------------------------------------------------------- Fortschritt */
+
+.progress {
+  height: 4px;
+  background: var(--sand-2);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.progress > i {
+  display: block;
+  height: 4px;
+  background: var(--ink);
+  border-radius: 2px;
+  transition: width 0.18s ease;
+}
+
+/* ---------------------------------------------------------------- Karten */
+
+.card {
+  background: var(--paper-2);
+  border: 0.5px solid var(--line-soft);
+  border-radius: 10px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.card > .row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line);
+}
+.card > .row:last-child {
+  border-bottom: none;
+}
+
+/* --------------------------------------------------------------- Schalter */
+
+.switch {
+  width: 40px;
+  height: 24px;
+  border-radius: 12px;
+  border: none;
+  padding: 2px;
+  cursor: pointer;
+  flex: none;
+  margin-left: auto;
+  background: var(--edge);
+  position: relative;
+  transition: background 0.18s ease;
+}
+.switch.is-on {
+  background: var(--ink);
+}
+.switch > i {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--paper);
+  display: block;
+  box-shadow: 0 1px 3px rgba(20, 18, 16, 0.24);
+  transform: translateX(0);
+  transition: transform 0.18s ease;
+}
+.switch.is-on > i {
+  transform: translateX(16px);
+}
+
+/* ---------------------------------------------------------------- Sonstiges */
+
+.section-label {
+  font-size: 12px;
+  color: var(--muted);
+}
+.hint {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+.keycap {
+  font-size: 13px;
+  border: 0.5px solid var(--edge);
+  border-radius: 6px;
+  padding: 4px 9px;
+  background: var(--paper);
+}
+.empty {
+  font-size: 13px;
+  color: var(--muted-2);
+  padding: 10px 8px;
+  text-wrap: pretty;
+}

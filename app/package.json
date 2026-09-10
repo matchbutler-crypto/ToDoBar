@@ -1,0 +1,36 @@
+{
+  "name": "cesa-todo",
+  "productName": "Todo",
+  "version": "1.0.0",
+  "description": "Menübar-Todo für macOS — schneller Eintrag aus der Menübar, Fenster für Planung, Archiv und Einstellungen.",
+  "main": "src/main/index.js",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "demo": "electron . --demo",
+    "test": "node scripts/test-model.js && electron scripts/test-ui.js",
+    "shots": "electron scripts/screenshot.js",
+    "dist": "electron-builder --mac"
+  },
+  "devDependencies": {
+    "electron": "^44.3.0",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "de.cesa.todo",
+    "productName": "Todo",
+    "files": [
+      "src/**/*",
+      "assets/**/*"
+    ],
+    "mac": {
+      "category": "public.app-category.productivity",
+      "target": [
+        "dmg"
+      ],
+      "extendInfo": {
+        "LSUIElement": true
+      }
+    }
+  }
+}
