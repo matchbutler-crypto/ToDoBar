@@ -1,7 +1,7 @@
 {
   "name": "checkbar",
   "productName": "Checkbar",
-  "version": "1.3.2",
+  "version": "1.3.3",
   "description": "Checkbar — die Menübar-Todo-App für macOS: Aufgaben in Sekunden eintragen, Tag und Woche planen, Unerledigtes wandert automatisch weiter.",
   "main": "src/main/index.js",
   "private": true,
