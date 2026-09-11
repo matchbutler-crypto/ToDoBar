@@ -9,6 +9,7 @@
       if (value === null || value === undefined || value === false) return;
       if (key === "class") node.className = value;
       else if (key === "text") node.textContent = value;
+      else if (key === "html") node.innerHTML = value;
       else if (key === "style") node.setAttribute("style", value);
       else if (key.slice(0, 2) === "on") node.addEventListener(key.slice(2).toLowerCase(), value);
       else if (key === "value") node.value = value;
@@ -82,6 +83,10 @@
     });
   }
 
+  const EDIT_ICON =
+    '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+    'stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>';
+
   function editButton(t, actions) {
     return h("button", {
       class: "edit-btn",
@@ -91,7 +96,7 @@
         e.stopPropagation();
         actions.startEdit(t.id);
       },
-      text: "✎"
+      html: EDIT_ICON
     });
   }
 
