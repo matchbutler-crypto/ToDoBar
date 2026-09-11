@@ -163,6 +163,23 @@
         return s;
       }
 
+      case "edit": {
+        const task = s.tasks.find((t) => t.id === action.id);
+        if (!task) return state;
+        const text = String(action.text || "").trim();
+        if (!text) return state;
+        mapTask(action.id, (t) =>
+          Object.assign({}, t, {
+            text: text,
+            cat: s.settings.categories.indexOf(action.cat) >= 0 ? action.cat : t.cat,
+            prio: RANK[action.prio] !== undefined ? action.prio : t.prio,
+            repeat: REPEATS.indexOf(action.repeat) >= 0 ? action.repeat : t.repeat,
+            note: action.note !== undefined ? String(action.note).trim() : t.note
+          })
+        );
+        return s;
+      }
+
       case "toggleSub":
         mapTask(action.id, (t) =>
           Object.assign({}, t, {
