@@ -103,7 +103,11 @@ function positionPopover() {
 
   // Das Panel beginnt PANEL_MARGIN_TOP unterhalb der Fensterkante — der Rand
   // trägt nur den Schatten und darf den Abstand zur Menübar nicht vergrößern.
-  const y = Math.max(area.y + 4 - PANEL_MARGIN_TOP, 0);
+  // Wichtig: gegen area.y verankern, nicht global gegen 0 — bei mehreren
+  // Bildschirmen kann der obere Rand eines Displays auch bei negativem y liegen
+  // (z. B. externer Monitor oberhalb des eingebauten), sonst rutscht das
+  // Popover dort ans untere Bildschirmende statt unter das Menübar-Symbol.
+  const y = area.y + 4 - PANEL_MARGIN_TOP;
 
   popover.setBounds({ x: x, y: y, width: bounds.width, height: bounds.height });
 }

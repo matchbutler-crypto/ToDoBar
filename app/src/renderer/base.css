@@ -277,19 +277,25 @@ button:focus-visible {
   gap: 8px;
   flex: none;
 }
-.delete-btn {
+.delete-btn,
+.edit-btn {
   width: 18px;
   height: 18px;
   border-radius: 50%;
   border: none;
   background: transparent;
-  color: var(--muted-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 15px;
   line-height: 1;
   cursor: pointer;
   padding: 0;
   opacity: 0;
   transition: opacity 0.12s ease, background 0.12s ease, color 0.12s ease;
+}
+.delete-btn {
+  color: var(--muted-2);
 }
 .delete-btn:hover {
   background: rgba(92, 42, 42, 0.12);
@@ -303,18 +309,8 @@ button:focus-visible {
 }
 
 .edit-btn {
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  border: none;
-  background: transparent;
-  color: var(--muted-2);
-  font-size: 11px;
-  line-height: 1;
-  cursor: pointer;
-  padding: 0;
-  opacity: 0;
-  transition: opacity 0.12s ease, background 0.12s ease, color 0.12s ease;
+  font-size: 12px;
+  color: var(--text-2);
 }
 .edit-btn:hover {
   background: var(--hover-2);
