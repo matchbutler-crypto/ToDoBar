@@ -82,6 +82,86 @@
     });
   }
 
+  function editButton(t, actions) {
+    return h("button", {
+      class: "edit-btn",
+      title: "Aufgabe bearbeiten",
+      "aria-label": "Bearbeiten: " + t.text,
+      onClick: (e) => {
+        e.stopPropagation();
+        actions.startEdit(t.id);
+      },
+      text: "✎"
+    });
+  }
+
+  /** Ersetzt die Zeile durch ein Formular: Text, Kategorie, Priorität, Wiederholung, Notiz. */
+  function editForm(t, opts) {
+    const draft = opts.editDraft;
+    const actions = opts.actions;
+
+    const textInput = h("input", {
+      type: "text",
+      class: "edit-text",
+      value: draft.text,
+      autocomplete: "off",
+      spellcheck: "false",
+      onKeydown: (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          actions.saveEdit(t.id);
+        } else if (e.key === "Escape") {
+          e.preventDefault();
+          e.stopPropagation();
+          actions.cancelEdit();
+        }
+      },
+      onInput: (e) => {
+        draft.text = e.target.value;
+      }
+    });
+
+    const catsHost = h("div", { class: "chips edit-chips" });
+    const prioHost = h("div", { class: "segmented" });
+    const repeatHost = h("div", { class: "segmented" });
+    chipButtons(catsHost, opts.categories, draft.cat, (name) => {
+      draft.cat = name;
+      actions.refresh();
+    });
+    segButtons(prioHost, opts.prios, draft.prio, (v) => {
+      draft.prio = v;
+      actions.refresh();
+    });
+    segButtons(repeatHost, opts.repeats, draft.repeat, (v) => {
+      draft.repeat = v;
+      actions.refresh();
+    });
+
+    const noteInput = h("textarea", {
+      class: "edit-note",
+      placeholder: "Notiz (optional)",
+      rows: "2",
+      value: draft.note || "",
+      onKeydown: (e) => {
+        if (e.key === "Escape") {
+          e.preventDefault();
+          e.stopPropagation();
+          actions.cancelEdit();
+        }
+      },
+      onInput: (e) => {
+        draft.note = e.target.value;
+      }
+    });
+
+    const actionsRow = h("div", { class: "edit-actions" }, [
+      h("button", { class: "edit-save", text: "Speichern", onClick: () => actions.saveEdit(t.id) }),
+      h("button", { class: "edit-cancel", text: "Abbrechen", onClick: () => actions.cancelEdit() })
+    ]);
+
+    return h("div", { class: "edit-form" }, [textInput, catsHost, prioHost, repeatHost, noteInput, actionsRow]);
+  }
+
   /**
    * variant: "popover" | "plan" | "backlog"
    * Im Popover hängt der aufgeklappte Block unter der ganzen Zeile, im Fenster
@@ -90,6 +170,7 @@
    */
   function taskRow(t, opts) {
     const variant = opts.variant;
+    const editing = opts.editingId === t.id;
     const expanded = opts.expandedId === t.id && t.canExpand;
     const big = variant !== "popover";
 
@@ -99,6 +180,12 @@
       "aria-pressed": t.done ? "true" : "false",
       onClick: () => opts.actions.toggle(t.id)
     });
+
+    if (editing) {
+      const column = h("div", { class: "task-col" }, [editForm(t, opts)]);
+      const head = h("div", { class: "task-head" }, [check, column]);
+      return h("div", { class: "task task-" + variant + " is-editing" }, [head]);
+    }
 
     const text = h("span", {
       class: "task-text" + (big ? " lg" : "") + (t.done ? " is-done" : "") + (t.canExpand ? " can-expand" : ""),
@@ -125,6 +212,7 @@
         ? h("button", { class: "to-today", text: "Heute", onClick: () => opts.actions.toToday(t.id) })
         : null,
       variant !== "backlog" && t.isHigh ? h("span", { class: "flag", title: "Hohe Priorität" }) : null,
+      editButton(t, opts.actions),
       deleteButton(t, opts.actions)
     ]);
 

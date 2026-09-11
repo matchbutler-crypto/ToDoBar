@@ -23,7 +23,7 @@
   };
 
   // Nur Oberfläche — die Aufgaben selbst liegen im Main-Prozess.
-  const ui = { cat: null, prio: "Mittel", bucket: "Heute", repeat: "Einmalig", expanded: null };
+  const ui = { cat: null, prio: "Mittel", bucket: "Heute", repeat: "Einmalig", expanded: null, editingId: null, editDraft: null };
   let state = null;
 
   const actions = {
@@ -32,6 +32,38 @@
     remove: (id) => window.todo.dispatch({ type: "remove", id: id }),
     expand: (id) => {
       ui.expanded = ui.expanded === id ? null : id;
+      render();
+    },
+    startEdit: (id) => {
+      const t = state.tasks.find((x) => x.id === id);
+      if (!t) return;
+      ui.editingId = id;
+      ui.editDraft = { text: t.text, cat: t.cat, prio: t.prio, repeat: t.repeat, note: t.note || "" };
+      ui.expanded = null;
+      render();
+    },
+    cancelEdit: () => {
+      ui.editingId = null;
+      ui.editDraft = null;
+      render();
+    },
+    saveEdit: (id) => {
+      const draft = ui.editDraft;
+      if (!draft || !draft.text.trim()) return;
+      ui.editingId = null;
+      ui.editDraft = null;
+      window.todo.dispatch({
+        type: "edit",
+        id: id,
+        text: draft.text,
+        cat: draft.cat,
+        prio: draft.prio,
+        repeat: draft.repeat,
+        note: draft.note
+      });
+      reportHeight();
+    },
+    refresh: () => {
       render();
     }
   };
@@ -90,7 +122,18 @@
       els.list.appendChild(h("div", { class: "empty", text: "Nichts für heute. Oben eintragen." }));
     } else {
       view.today.forEach((t) =>
-        els.list.appendChild(UI.taskRow(t, { variant: "popover", expandedId: ui.expanded, actions: actions }))
+        els.list.appendChild(
+          UI.taskRow(t, {
+            variant: "popover",
+            expandedId: ui.expanded,
+            editingId: ui.editingId,
+            editDraft: ui.editDraft,
+            categories: cats,
+            prios: Model.PRIOS,
+            repeats: Model.REPEATS,
+            actions: actions
+          })
+        )
       );
     }
 

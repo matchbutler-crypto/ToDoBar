@@ -302,6 +302,79 @@ button:focus-visible {
   opacity: 1;
 }
 
+.edit-btn {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--muted-2);
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  opacity: 0;
+  transition: opacity 0.12s ease, background 0.12s ease, color 0.12s ease;
+}
+.edit-btn:hover {
+  background: var(--hover-2);
+  color: var(--ink);
+}
+.task-popover:hover .edit-btn,
+.task-plan:hover .edit-btn,
+.task-backlog:hover .edit-btn {
+  opacity: 1;
+}
+
+/* ------------------------------------------------------- Aufgabe bearbeiten */
+
+.edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 2px 0 4px;
+}
+.edit-text {
+  font-size: 14px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 0.5px solid var(--edge);
+  background: var(--paper);
+  color: var(--ink);
+  width: 100%;
+}
+.edit-note {
+  font-size: 12px;
+  line-height: 1.5;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 0.5px solid var(--edge);
+  background: var(--paper);
+  color: var(--ink);
+  width: 100%;
+  resize: vertical;
+  font-family: inherit;
+}
+.edit-actions {
+  display: flex;
+  gap: 8px;
+}
+.edit-save,
+.edit-cancel {
+  font-size: 12px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 0.5px solid var(--edge);
+  background: var(--paper);
+  color: var(--ink);
+}
+.edit-save {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+}
+
 /* Popover-Variante */
 .task-popover {
   padding: 9px 8px;
