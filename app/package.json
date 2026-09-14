@@ -19,6 +19,7 @@
   "build": {
     "appId": "de.cesa.checkbar",
     "productName": "Checkbar",
+    "afterPack": "build/afterPack.js",
     "files": [
       "src/**/*",
       "assets/**/*"

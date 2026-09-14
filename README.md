@@ -37,7 +37,17 @@ Alles läuft lokal — eine JSON-Datei auf der eigenen Platte, kein Server, kein
 
 **Fertige App (empfohlen):** [Releases](../../releases) → neueste `.dmg`
 herunterladen, öffnen, `Checkbar.app` nach `/Applications` ziehen. Beim ersten
-Start einmal rechtsklicken → Öffnen (unsigniert, siehe unten).
+Start einmal rechtsklicken → Öffnen (unsigniert, siehe unten). Meldet macOS
+stattdessen **„ist beschädigt und kann nicht geöffnet werden"**, hilft im
+Terminal:
+
+```bash
+xattr -cr /Applications/Checkbar.app
+```
+
+(Das entfernt das Quarantäne-Flag, das der Browser beim Download setzt —
+ohne kostenpflichtige Apple-Signatur zeigt macOS bei quarantänierten Kopien
+sonst diese irreführende Meldung statt des üblichen Rechtsklick-Hinweises.)
 
 **Aus dem Quellcode selbst bauen** — für Entwicklung oder wenn kein Release da ist:
 
