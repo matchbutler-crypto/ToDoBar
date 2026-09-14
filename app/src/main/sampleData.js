@@ -12,27 +12,27 @@ function seed(state) {
 
   const tasks = [
     {
-      text: "AW26 Lookbook — Bildauswahl finalisieren",
+      text: "Projekt A — Auswahl finalisieren",
       cat: "CESA", prio: "Hoch", bucket: "Heute", done: false, carried: 2, repeat: "Einmalig", day: today,
-      note: "Auswahl mit Studio abgestimmt, 34 Frames im Ordner. Entscheidung heute, Layout wartet.",
-      subs: [{ text: "Zweitauswahl markieren", done: true }, { text: "Retusche-Briefing schreiben", done: false }]
+      note: "Abstimmung erledigt, Unterlagen abgelegt. Entscheidung heute, nächster Schritt wartet.",
+      subs: [{ text: "Zwischenstand markieren", done: true }, { text: "Briefing schreiben", done: false }]
     },
-    { text: "Porto: Stoffmuster 380 gsm nachfassen", cat: "CESA", prio: "Hoch", bucket: "Heute", done: false, carried: 0, repeat: "Einmalig", day: today, note: "", subs: [] },
-    { text: "Rechnungen August ablegen", cat: "Admin", prio: "Niedrig", bucket: "Heute", done: true, carried: 0, repeat: "Wöchentlich", day: today, doneDay: today, note: "", subs: [] },
+    { text: "Lieferant: Bestellung nachfassen", cat: "CESA", prio: "Hoch", bucket: "Heute", done: false, carried: 0, repeat: "Einmalig", day: today, note: "", subs: [] },
+    { text: "Rechnungen ablegen", cat: "Admin", prio: "Niedrig", bucket: "Heute", done: true, carried: 0, repeat: "Wöchentlich", day: today, doneDay: today, note: "", subs: [] },
     {
-      text: "Produkttexte Hoodie schreiben",
+      text: "Texte schreiben",
       cat: "Deep Work", prio: "Mittel", bucket: "Heute", done: false, carried: 1, repeat: "Einmalig", day: today,
-      note: "Material, Herkunft, Passform. Keine Adjektive ohne Zahl.",
+      note: "Kurz und klar halten.",
       subs: [{ text: "Rohfassung", done: false }, { text: "Gegenlesen lassen", done: false }]
     },
     { text: "Zahnarzt anrufen", cat: "Privat", prio: "Mittel", bucket: "Heute", done: false, carried: 0, repeat: "Einmalig", day: today, note: "", subs: [] },
-    { text: "Hangtag-Druck freigeben", cat: "CESA", prio: "Hoch", bucket: "Woche", done: false, carried: 0, repeat: "Einmalig", day: null, note: "", subs: [] },
-    { text: "Saisonplanung SS27 skizzieren", cat: "Deep Work", prio: "Mittel", bucket: "Woche", done: false, carried: 0, repeat: "Einmalig", day: null, note: "", subs: [] },
-    { text: "Newsletter #15 vorbereiten", cat: "CESA", prio: "Mittel", bucket: "Woche", done: false, carried: 0, repeat: "Wöchentlich", day: null, note: "", subs: [] },
+    { text: "Freigabe erteilen", cat: "CESA", prio: "Hoch", bucket: "Woche", done: false, carried: 0, repeat: "Einmalig", day: null, note: "", subs: [] },
+    { text: "Planung skizzieren", cat: "Deep Work", prio: "Mittel", bucket: "Woche", done: false, carried: 0, repeat: "Einmalig", day: null, note: "", subs: [] },
+    { text: "Newsletter vorbereiten", cat: "CESA", prio: "Mittel", bucket: "Woche", done: false, carried: 0, repeat: "Wöchentlich", day: null, note: "", subs: [] },
     { text: "Lager sortieren", cat: "Admin", prio: "Niedrig", bucket: "Woche", done: false, carried: 0, repeat: "Einmalig", day: null, note: "", subs: [] },
-    { text: "Casting-Shortlist durchgehen", cat: "CESA", prio: "Mittel", bucket: "Heute", done: true, carried: 0, repeat: "Einmalig", day: back(1), doneDay: back(1), note: "", subs: [] },
+    { text: "Shortlist durchgehen", cat: "CESA", prio: "Mittel", bucket: "Heute", done: true, carried: 0, repeat: "Einmalig", day: back(1), doneDay: back(1), note: "", subs: [] },
     { text: "Steuerberater Unterlagen", cat: "Admin", prio: "Hoch", bucket: "Heute", done: true, carried: 0, repeat: "Einmalig", day: back(2), doneDay: back(2), note: "", subs: [] },
-    { text: "Newsletter #14 gegenlesen", cat: "CESA", prio: "Mittel", bucket: "Heute", done: true, carried: 0, repeat: "Einmalig", day: back(3), doneDay: back(3), note: "", subs: [] }
+    { text: "Newsletter gegenlesen", cat: "CESA", prio: "Mittel", bucket: "Heute", done: true, carried: 0, repeat: "Einmalig", day: back(3), doneDay: back(3), note: "", subs: [] }
   ];
 
   return Object.assign({}, state, {

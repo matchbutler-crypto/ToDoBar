@@ -175,10 +175,10 @@ app.whenReady().then(async () => {
     });
 
     await check("Aufklappen zeigt Notiz und Unteraufgaben", async () => {
-      await clickByText(popover, ".can-expand", "AW26");
+      await clickByText(popover, ".can-expand", "Projekt A");
       await wait(150);
       assert.strictEqual(await val(popover, "document.querySelectorAll('.task-popover .details .sub').length"), 2);
-      assert.ok((await val(popover, "document.querySelector('.details .note').textContent")).indexOf("34 Frames") > 0);
+      assert.ok((await val(popover, "document.querySelector('.details .note').textContent")).indexOf("Unterlagen abgelegt") > 0);
     });
 
     await check("Löschen entfernt die Aufgabe aus Popover und Store", async () => {
