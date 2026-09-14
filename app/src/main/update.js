@@ -10,7 +10,7 @@
 const https = require("https");
 
 const REPO = "matchbutler-crypto/ToDoBar";
-const BRANCH = "todo-menubar-app";
+const BRANCH = "main";
 const TIMEOUT_MS = 10000;
 
 function fetchJSON(reqPath, token) {

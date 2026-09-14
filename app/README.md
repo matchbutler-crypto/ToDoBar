@@ -126,7 +126,7 @@ Unter Linux brauchen die Electron-Teile einen X-Server: `xvfb-run -a npm test`.
 ## Update-Check und Ein-Klick-Installieren
 
 Einstellungen → Software → **„Nach Updates suchen"** vergleicht die eigene Versionsnummer
-mit `app/package.json` auf dem `todo-menubar-app`-Branch bei GitHub — nur auf Klick,
+mit `app/package.json` auf dem `main`-Branch bei GitHub — nur auf Klick,
 kein automatischer Hintergrund-Check.
 
 Ist ein Update da, erscheint **„Update installieren"**. Ein Klick, und im Hintergrund
