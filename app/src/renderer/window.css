@@ -141,6 +141,21 @@ body {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  border-radius: 8px;
+  transition: background-color 0.12s ease;
+}
+.rows.drag-over {
+  background: var(--accent-weak, rgba(90, 130, 255, 0.12));
+  outline: 2px dashed var(--accent, #5a82ff);
+  outline-offset: -2px;
+}
+.task-plan.is-dragging,
+.task-backlog.is-dragging {
+  opacity: 0.4;
+}
+.task-plan,
+.task-backlog {
+  cursor: grab;
 }
 .week-field {
   margin: 6px 8px 0;
