@@ -223,7 +223,19 @@
 
     const head = h("div", { class: "task-head" }, [check, column, trailing]);
 
-    return h("div", { class: "task task-" + variant }, [head, variant === "popover" ? details : null]);
+    const node = h("div", { class: "task task-" + variant }, [head, variant === "popover" ? details : null]);
+
+    if ((variant === "plan" || variant === "backlog") && opts.actions.moveBucket) {
+      node.draggable = true;
+      node.addEventListener("dragstart", (e) => {
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("text/plain", String(t.id));
+        node.classList.add("is-dragging");
+      });
+      node.addEventListener("dragend", () => node.classList.remove("is-dragging"));
+    }
+
+    return node;
   }
 
   root.UI = { h: h, clear: clear, segButtons: segButtons, chipButtons: chipButtons, taskRow: taskRow, metaLine: metaLine };

@@ -192,6 +192,10 @@
         mapTask(action.id, (t) => Object.assign({}, t, { bucket: "Heute", day: today }));
         return s;
 
+      case "toWeek":
+        mapTask(action.id, (t) => Object.assign({}, t, { bucket: "Woche", day: null, carried: 0 }));
+        return s;
+
       case "remove":
         s.tasks = s.tasks.filter((t) => t.id !== action.id);
         return s;

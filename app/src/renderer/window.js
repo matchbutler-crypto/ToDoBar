@@ -42,6 +42,7 @@
     toggle: (id) => dispatch({ type: "toggle", id: id }),
     toggleSub: (id, index) => dispatch({ type: "toggleSub", id: id, index: index }),
     toToday: (id) => dispatch({ type: "toToday", id: id }),
+    moveBucket: (id, bucket) => dispatch({ type: bucket === "Heute" ? "toToday" : "toWeek", id: id }),
     remove: (id) => dispatch({ type: "remove", id: id }),
     expand: (id) => {
       ui.expanded = ui.expanded === id ? null : id;
@@ -401,6 +402,26 @@
     else if (ui.tab === "Archiv") renderArchive(view);
     else renderSettings(view);
   }
+
+  /** Aufgabe per Drag & Drop zwischen "Heute" und "Diese Woche" verschieben. */
+  function setupDropZone(host, bucket) {
+    host.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      host.classList.add("drag-over");
+    });
+    host.addEventListener("dragleave", (e) => {
+      if (!host.contains(e.relatedTarget)) host.classList.remove("drag-over");
+    });
+    host.addEventListener("drop", (e) => {
+      e.preventDefault();
+      host.classList.remove("drag-over");
+      const id = Number(e.dataTransfer.getData("text/plain"));
+      if (id) actions.moveBucket(id, bucket);
+    });
+  }
+  setupDropZone(els.todayList, "Heute");
+  setupDropZone(els.backlogList, "Woche");
 
   els.backlogDraft.addEventListener("keydown", (e) => {
     if (e.key !== "Enter") return;
